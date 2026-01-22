@@ -1,0 +1,22 @@
+from app import db
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import func, ForeignKey
+import datetime
+from flask_login import UserMixin
+
+class BaseModel(db.Model):
+    __abstract__ = True
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now, onupdate=func.now)
+
+class UserModel(BaseModel, UserMixin):
+    __tablename__ = 'users'
+    username: Mapped[str]
+    stats: Mapped['UserStatsModel'] = relationship(back_populates='user')
+
+class UserStatsModel(BaseModel):
+    __tablename__ = 'stats'
+    total_score: Mapped[int]
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)
+    user: Mapped[UserModel] = relationship(back_populates='stats')
