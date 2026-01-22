@@ -1,19 +1,16 @@
 from app import ma
-from .models import BaseModel, UserModel, UserStatsModel
+from .models import UserModel, UserStatsModel
 
-class BaseSchema(ma.SQLAlchemyAutoSchema):
+
+class StatsSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model = BaseModel
-        include_fk = True
+        model = UserStatsModel
 
-class UserSchema(BaseSchema):
+class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = UserModel
     
-    stats = ma.Nested(UserStatsModel)
+    stats = ma.Nested(StatsSchema)
 
-class StatsSchema(BaseSchema):
-    class Meta:
-        model = UserStatsModel
 
 user_schema = UserSchema()

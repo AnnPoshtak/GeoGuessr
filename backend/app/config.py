@@ -1,7 +1,11 @@
 import os
 from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
 
-load_dotenv(find_dotenv())
+PROJECT_PATH = Path(__file__).resolve().parents[2]
+ENV_PATH = Path(PROJECT_PATH) / "backend" / ".env"
+
+load_dotenv(ENV_PATH)
 
 class BaseConfig():
     SECRET_KEY = os.environ['SECRET_KEY']
@@ -18,6 +22,25 @@ class BaseConfig():
             f'postgresql+psycopg2://{user}:{password}'
             f'@{host}:{port}/{dbname}'
         )
+    OAUTH_PROVIDERS = {
+        'google': {
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
+            'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
+            'authorize_url': 'https://accounts.google.com/o/oauth2/v2/auth',
+            'access_token_url': 'https://oauth2.googleapis.com/token',
+            'api_base_url': 'https:/googleapis.com/',
+            'userinfo': {
+                'url': 'https://www.googleapis.com/oauth2/v3/userinfo',
+                # This field exists because different oauth providers give different emails, i.e. github 
+                # provides you with a list of emals attached to an account
+                'email': lambda json: json['email'],
+            },
+            'scopes': ['email']
+        },
+    }
+    FRONTEND_URL = os.environ['FRONTEND_URL']
+    # An url for frontend oauth callback
+    FRONTEND_OAUTH_CALLBACK_URL = FRONTEND_URL
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

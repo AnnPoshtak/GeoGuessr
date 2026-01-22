@@ -7,8 +7,8 @@ from flask_login import UserMixin
 class BaseModel(db.Model):
     __abstract__ = True
     id: Mapped[int] = mapped_column(primary_key=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now)
-    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now, onupdate=func.now)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now())
+    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now(), onupdate=func.now())
 
 class UserModel(BaseModel, UserMixin):
     __tablename__ = 'users'
@@ -17,6 +17,6 @@ class UserModel(BaseModel, UserMixin):
 
 class UserStatsModel(BaseModel):
     __tablename__ = 'stats'
-    total_score: Mapped[int]
+    total_score: Mapped[int] = mapped_column(default=0)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), index=True)
     user: Mapped[UserModel] = relationship(back_populates='stats')
