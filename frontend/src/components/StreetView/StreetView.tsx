@@ -5,14 +5,28 @@ interface MapCenter {
     lng: number;
 }
 
+interface povStructure {
+    heading: number;
+    pitch: number;
+}
+
+interface Options {
+    pov: povStructure;
+    zoom: number;
+    motionTracking: boolean;
+    addressControl: boolean;
+    fullscreenControl: boolean;
+}
+
 interface StreetViewProps {
     apiKey: string;
     zoom: number;
     center: MapCenter;
     style: object;
+    options: Options;
 }
 
-function StreetView({ apiKey, zoom, center, style }: StreetViewProps) {
+function StreetView({ apiKey, zoom, center, style, options }: StreetViewProps) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey,
@@ -30,13 +44,7 @@ function StreetView({ apiKey, zoom, center, style }: StreetViewProps) {
             <StreetViewPanorama
                 position={center}
                 visible={true}
-                options={{
-                    pov: { heading: 135, pitch: 5 },
-                    zoom: 0.5,
-                    motionTracking: false,
-                    addressControl: false,
-                    fullscreenControl: false
-                }}
+                options={options}
             />
         </GoogleMap>
     );
