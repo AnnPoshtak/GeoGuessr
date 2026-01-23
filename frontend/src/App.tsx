@@ -1,16 +1,14 @@
-import React from 'react';
-import StreetView from './StreetView.tsx';
+import StreetView from './components/StreetView/StreetView.tsx';
 
-const App: React.FC = () => {
-
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+function App() {
+    const apiKey = "API_KEY";
 
     return (
         <div className="App">
-            <h1>StreenView Map</h1>
-            <StreetView apiKey={apiKey} />
+            <h1>StreetView Map</h1>
+            <StreetView apiKey={apiKey} zoom={14} center={{lat: 48.8625, lng: 2.2882}} style={{width: "100%", height: '100vh', position: "absolute", top: 0, right: 0}}/>
         </div>
     );
-};
+}
 
 export default App;
