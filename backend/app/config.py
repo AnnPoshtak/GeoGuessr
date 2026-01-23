@@ -38,9 +38,9 @@ class BaseConfig():
             'scopes': ['email']
         },
     }
-    FRONTEND_URL = os.environ['FRONTEND_URL']
+    FRONTEND_URL = os.environ['FRONTEND_URL'].rstrip('/')
     # An url for frontend oauth callback
-    FRONTEND_OAUTH_CALLBACK_URL = FRONTEND_URL
+    FRONTEND_OAUTH_CALLBACK_URL = f"{FRONTEND_URL}/oauth/callback/"
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
