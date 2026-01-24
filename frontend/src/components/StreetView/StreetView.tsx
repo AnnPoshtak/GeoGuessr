@@ -1,4 +1,5 @@
 import { GoogleMap, useJsApiLoader, StreetViewPanorama } from '@react-google-maps/api';
+import MenuButton from "../MenuButton/MenuButton.tsx";
 
 interface MapCenter {
     lat: number;
@@ -36,17 +37,21 @@ function StreetView({ apiKey, zoom, center, style, options }: StreetViewProps) {
     if (!isLoaded) return <div>Loading...</div>;
 
     return (
-        <GoogleMap
-            mapContainerStyle={style}
-            center={center}
-            zoom={zoom}
-        >
-            <StreetViewPanorama
-                position={center}
-                visible={true}
-                options={options}
-            />
-        </GoogleMap>
+        <>
+            <GoogleMap
+                mapContainerStyle={style}
+                center={center}
+                zoom={zoom}
+            >
+                <StreetViewPanorama
+                    position={center}
+                    visible={true}
+                    options={options}
+                />
+            </GoogleMap>
+            <MenuButton />
+        </>
+
     );
 }
 
