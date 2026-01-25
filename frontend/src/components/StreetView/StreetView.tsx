@@ -1,33 +1,20 @@
-import { GoogleMap, useJsApiLoader, StreetViewPanorama } from '@react-google-maps/api';
-import MenuButton from "../MenuButton/MenuButton.tsx";
+import { GoogleMap, useJsApiLoader, StreetViewPanorama, type StreetViewPanoramaProps } from '@react-google-maps/api';
+import type { CSSProperties } from 'react';
 
 interface MapCenter {
     lat: number;
     lng: number;
 }
 
-interface povStructure {
-    heading: number;
-    pitch: number;
-}
-
-interface Options {
-    pov: povStructure;
-    zoom: number;
-    motionTracking: boolean;
-    addressControl: boolean;
-    fullscreenControl: boolean;
-}
-
 interface StreetViewProps {
     apiKey: string;
     zoom: number;
     center: MapCenter;
-    style: object;
-    options: Options;
+    style: CSSProperties;
+    panoramaProps: StreetViewPanoramaProps;
 }
 
-function StreetView({ apiKey, zoom, center, style, options }: StreetViewProps) {
+function StreetView({ apiKey, zoom, center, style, panoramaProps }: StreetViewProps) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey,
@@ -35,6 +22,20 @@ function StreetView({ apiKey, zoom, center, style, options }: StreetViewProps) {
 
     if (loadError) return <div>Map loading error</div>;
     if (!isLoaded) return <div>Loading...</div>;
+
+    const streetViewOptions: google.maps.StreetViewPanoramaOptions = {
+        ...panoramaProps.options,
+        enableCloseButton: false
+    }
+
+    const streetViewProps: StreetViewPanoramaProps = {
+        ...panoramaProps,
+        // @ts-ignore
+        position: center,
+        // @ts-ignore
+        visible: true,
+        options: streetViewOptions
+    }
 
     return (
         <>
@@ -44,12 +45,9 @@ function StreetView({ apiKey, zoom, center, style, options }: StreetViewProps) {
                 zoom={zoom}
             >
                 <StreetViewPanorama
-                    position={center}
-                    visible={true}
-                    options={options}
+                    {...streetViewProps}
                 />
             </GoogleMap>
-            <MenuButton />
         </>
 
     );
