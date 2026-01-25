@@ -1,10 +1,10 @@
-import GameUI from "../../components/GameUI/GameUI.tsx";
-import StreetView from "../../components/StreetView/StreetView.tsx";
-import locationsData from "../../public/data/Uk-locations.json";
+import GameUI from "@/components/GameUI/GameUI.tsx";
+import StreetView from "@/components/StreetView/StreetView.tsx";
+import locationsData from "@/public/data/Uk-locations.json";
 import { useEffect, useState } from "react";
 
 function SinglePlayer() {
-    const apiKey = import.meta.env.VITE_GOOGLE_API;
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const [lat, setLat] = useState<number>(0);
     const [lng, setLng] = useState<number>(0);
     const [heading, setHeading] = useState<number>(0);
