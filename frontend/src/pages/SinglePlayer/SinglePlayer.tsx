@@ -1,12 +1,13 @@
 import getRandomLocation from "@/api/getRandomLocation/getRandomLocation";
 import GameUI from "@/components/GameUI/GameUI.tsx";
+import LocationSelectMap from "@/components/LocationSelectMap/LocationSelectMap";
 import StreetView from "@/components/StreetView/StreetView.tsx";
-import type { MapLocation } from "@/types/MapLocation";
+import type { StreetViewLocationFromApi } from "@/types/StreetViewLocationFromApi";
 import { useQuery } from "@tanstack/react-query";
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-    const { data: location, isPending, isError } = useQuery<MapLocation>({
+    const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],
         queryFn: async () => {
             const resp = await getRandomLocation();
@@ -21,17 +22,28 @@ function SinglePlayer() {
     if (isError) return <div>Error</div>
 
     return (
-        <div className="App">
+        <div>
             <StreetView
                 apiKey={apiKey}
                 zoom={14}
                 center={{ lat: location.lat, lng: location.lng }}
-                style={{ width: "100%", height: '100vh', position: "absolute", top: 0, right: 0, zIndex: 10 }}
+                className="w-full h-full absolute z-10 top-0 right-0"
                 panoramaProps={{
                     options:
-                        { pov: { heading: location.heading, pitch: 5 }, zoom: 0.5, motionTracking: false, addressControl: false, fullscreenControl: false }
+                    {
+                        pov:
+                        {
+                            heading: location.heading,
+                            pitch: 5
+                        },
+                        zoom: 0.5,
+                        motionTracking: false,
+                        addressControl: false,
+                        fullscreenControl: false,
+                    },
                 }}
             />
+            <LocationSelectMap apiKey={apiKey} className="w-1/4 h-1/4 transition-all hover:w-2/5 hover:h-2/5 absolute z-20 bottom-10 right-16 flex flex-col gap-1" />
             <GameUI />
         </div>
     );

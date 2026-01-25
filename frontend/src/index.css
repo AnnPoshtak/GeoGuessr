@@ -1,1 +1,5 @@
 @import 'tailwindcss';
+
+#root, body {
+    @apply h-screen w-full;
+}

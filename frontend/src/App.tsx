@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 
 function App() {
     return (
-        <>
+        <div className="w-full h-full">
             <Toaster toastOptions={{
                 style: {
                     // @ts-ignore
@@ -22,7 +22,7 @@ function App() {
                     <Route path="callback" element={<OAuthCallback />} />
                 </Route>
             </Routes>
-        </>
+        </div>
     )
 }
 export default App;
