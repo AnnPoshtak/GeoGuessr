@@ -1,34 +1,35 @@
+import getRandomLocation from "@/api/getRandomLocation/getRandomLocation";
 import GameUI from "@/components/GameUI/GameUI.tsx";
 import StreetView from "@/components/StreetView/StreetView.tsx";
-import locationsData from "@/public/data/Uk-locations.json";
-import { useEffect, useState } from "react";
+import type { MapLocation } from "@/types/MapLocation";
+import { useQuery } from "@tanstack/react-query";
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-    const [lat, setLat] = useState<number>(0);
-    const [lng, setLng] = useState<number>(0);
-    const [heading, setHeading] = useState<number>(0);
+    const { data: location, isPending, isError } = useQuery<MapLocation>({
+        queryKey: ['randomLocation'],
+        queryFn: async () => {
+            const resp = await getRandomLocation();
+            if (!resp) return;
+            return resp.json();
+        },
+        retry: false,
+        refetchOnWindowFocus: false,
+    });
 
-    useEffect(() => {
-        if (locationsData && locationsData.length > 0) {
-            const randomElement = locationsData[Math.floor(Math.random() * locationsData.length)];
-            console.log("Randomly selected element:", randomElement);
-            setLat(randomElement.lat);
-            setLng(randomElement.lng);
-            setHeading(randomElement.heading);
-        }
-    }, []);
+    if (isPending) return <div>Loading...</div>
+    if (isError) return <div>Error</div>
 
     return (
         <div className="App">
             <StreetView
                 apiKey={apiKey}
                 zoom={14}
-                center={{ lat: lat, lng: lng }}
+                center={{ lat: location.lat, lng: location.lng }}
                 style={{ width: "100%", height: '100vh', position: "absolute", top: 0, right: 0, zIndex: 10 }}
                 panoramaProps={{
                     options:
-                        { pov: { heading: heading, pitch: 5 }, zoom: 0.5, motionTracking: false, addressControl: false, fullscreenControl: false }
+                        { pov: { heading: location.heading, pitch: 5 }, zoom: 0.5, motionTracking: false, addressControl: false, fullscreenControl: false }
                 }}
             />
             <GameUI />

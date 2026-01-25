@@ -52,11 +52,12 @@ def create_app(config=DevelopmentConfig) -> Flask:
 
     with app.app_context():
         db.create_all()
-        from .blueprints import oauth_bp, csrf_bp, users_bp, auth_bp
+        from .blueprints import oauth_bp, csrf_bp, users_bp, auth_bp, game_bp
         app.register_blueprint(oauth_bp, url_prefix='/oauth')
         app.register_blueprint(csrf_bp, url_prefix='/csrf')
         app.register_blueprint(users_bp, url_prefix='/users')
         app.register_blueprint(auth_bp, url_prefix='/auth')
+        app.register_blueprint(game_bp, url_prefix='/game')
 
 
     return app
