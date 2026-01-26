@@ -6,8 +6,8 @@ from flask_login import LoginManager
 from flask_marshmallow import Marshmallow
 from app.config import DevelopmentConfig
 from flask_wtf.csrf import CSRFProtect
-from dotenv import load_dotenv, find_dotenv
 from authlib.integrations.flask_client import OAuth
+from flask_session import Session
 
 cors = CORS()
 db = SQLAlchemy()
@@ -16,6 +16,7 @@ login_manager = LoginManager()
 ma = Marshmallow()
 csrf = CSRFProtect()
 oauth = OAuth()
+sess = Session()
 
 from .models import UserModel
 
@@ -34,6 +35,7 @@ def create_app(config=DevelopmentConfig) -> Flask:
     csrf.init_app(app)
     login_manager.init_app(app)
     oauth.init_app(app)
+    sess.init_app(app)
 
     for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
         oauth.register(

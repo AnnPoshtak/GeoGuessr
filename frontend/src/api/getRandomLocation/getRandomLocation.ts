@@ -2,7 +2,7 @@ import config from "@/config";
 
 async function getRandomLocation() {
     try {
-        const resp = await fetch(config.backendUrl + '/game/get_random_location/', {
+        const resp = await fetch(config.backendUrl + '/game/random_location/', {
             headers: {
                 "Content-Type": "application/json"
             }

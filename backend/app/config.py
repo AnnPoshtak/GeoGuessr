@@ -1,6 +1,7 @@
 import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from pathlib import Path
+from redis import Redis
 
 PROJECT_PATH = Path(__file__).resolve().parents[2]
 ENV_PATH = Path(PROJECT_PATH) / "backend" / ".env"
@@ -41,6 +42,10 @@ class BaseConfig():
     FRONTEND_URL = os.environ['FRONTEND_URL'].rstrip('/')
     # An url for frontend oauth callback
     FRONTEND_OAUTH_CALLBACK_URL = f"{FRONTEND_URL}/oauth/callback/"
+    # Flask session-related settings
+    SESSION_TYPE = 'redis'
+    SESSION_REDIS = Redis(host=os.environ['REDIS_HOST'],
+                          port=int(os.environ['REDIS_PORT']))
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
