@@ -11,7 +11,6 @@ def calculate_line_distance(loc1: dict, loc2: dict) -> float:
     :return: Shortest distance between loc1 and loc2
     :rtype: float
     '''
-    print(loc1, loc2)
     EARTH_RAD = 6371 * 1000 # in metres
     lat1 = math.radians(loc1['lat'])
     lng1 = math.radians(loc1['lng'])

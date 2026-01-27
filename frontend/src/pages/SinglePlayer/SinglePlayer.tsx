@@ -43,7 +43,8 @@ function SinglePlayer() {
                     },
                 }}
             />
-            <LocationSelectMap apiKey={apiKey} className="w-1/4 h-1/4 transition-all hover:w-2/5 hover:h-2/5 absolute z-20 bottom-10 right-16 flex flex-col gap-1" />
+            <LocationSelectMap apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
+            hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1" />
             <GameUI />
         </div>
     );

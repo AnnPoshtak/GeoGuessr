@@ -23,6 +23,9 @@ class BaseConfig():
             f'postgresql+psycopg2://{user}:{password}'
             f'@{host}:{port}/{dbname}'
         )
+    CORS_ORIGINS = {
+        '/*': os.environ['CORS_ORIGINS']
+    }
     OAUTH_PROVIDERS = {
         'google': {
             'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
@@ -50,6 +53,8 @@ class BaseConfig():
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     FLASK_ENV = 'DEVELOPMENT'
+    # ! The CSRF protection still has to be implemented
+    WTF_CSRF_ENABLED = False
 
 class TestingConfig(BaseConfig):
     TESTING = True

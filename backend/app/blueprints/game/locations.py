@@ -19,12 +19,14 @@ def submit_location():
         return abort(400)
     if not 'lat' in data['guess'] or not 'lng' in data['guess']:
         return abort(400)
-    act_loc = session.get('location')
-    distance = calculate_line_distance(act_loc, data['guess'])
+    if not session.get('location'):
+        return abort(400)
+    target_loc = session.pop('location')
+    distance = calculate_line_distance(target_loc, data['guess'])
     score = calculate_score(distance)
     result = {
         'guess': data['guess'],
-        'actual_location': act_loc,
+        'target_location': target_loc,
         'distance': distance,
         'score': score
     }

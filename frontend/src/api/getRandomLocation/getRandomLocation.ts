@@ -5,7 +5,8 @@ async function getRandomLocation() {
         const resp = await fetch(config.backendUrl + '/game/random_location/', {
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            credentials: "include",
         });
         if (!resp.ok) throw new Error("Failed to fetch random location!");
         return resp;

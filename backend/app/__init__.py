@@ -30,7 +30,7 @@ def create_app(config=DevelopmentConfig) -> Flask:
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app)
+    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     ma.init_app(app)
     csrf.init_app(app)
     login_manager.init_app(app)
