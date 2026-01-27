@@ -2,7 +2,7 @@ import type { MapLocation } from "./MapLocation";
 
 export interface GuessSubmitInfoFromApi {
     guess: MapLocation;
-    target_location: MapLocation;
+    target: MapLocation;
     distance: number;
     score: number;
 };

@@ -1,6 +1,6 @@
 import pytest
 import random
-from flask import url_for, session
+from flask import url_for
 
 def test_random_location(client, mocker):
     loc1 = {
@@ -46,4 +46,4 @@ def test_submit_location(client, mocker, app):
     assert resp.get_json()['distance'] == 15
     assert resp.get_json()['score'] == 122
     assert resp.get_json()['guess'] == guess
-    assert resp.get_json()['target_location'] == loc1
+    assert resp.get_json()['target'] == loc1

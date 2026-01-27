@@ -44,7 +44,7 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
                 const bounds = new google.maps.LatLngBounds();
 
                 bounds.extend(guessLocation);
-                bounds.extend(data.target_location);
+                bounds.extend(data.target);
                 map.fitBounds(bounds);
             },
             onError: (err) => {
@@ -92,14 +92,14 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
     if (!isLoaded) return <div>Loading...</div>;
     return <div className={className}>
         <GoogleMap onLoad={(m) => setMap(m)} onClick={createMarker} mapContainerClassName="w-full h-full border-0 rounded-2xl" options={mapOptions} center={mapLocation} zoom={1.5}>
-            {submitInfo?.target_location && guessLocation && < TargetMarker position={submitInfo?.target_location} />}
+            {submitInfo?.target && guessLocation && < TargetMarker position={submitInfo?.target} />}
             <Polyline path={
-                guessLocation && submitInfo?.target_location ? [
+                guessLocation && submitInfo?.target ? [
                     guessLocation,
-                    submitInfo?.target_location
+                    submitInfo?.target
                 ] : []} options={
                     {
-                        visible: isSubmitted && !!submitInfo?.target_location && !!guessLocation,
+                        visible: isSubmitted && !!submitInfo?.target && !!guessLocation,
                         strokeOpacity: 0,
                         icons: [
                             {

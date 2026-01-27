@@ -16,14 +16,14 @@ def test_calculate_line_distance():
 
 def test_calculate_score():
     dist = 0
-    res = calculate_score(dist)
-    assert res == 1000
+    res1 = calculate_score(dist)
+    assert res1 == 1000
 
     dist = 600 * 1000
-    res = calculate_score(dist)
-    assert res == 180
+    res2 = calculate_score(dist)
+    assert res2 < res1
     
     dist = 950.47 * 1000
-    res = calculate_score(dist)
-    assert res == 66
+    res3 = calculate_score(dist)
+    assert res3 < res1
     

@@ -1,4 +1,5 @@
 import math
+from flask import current_app
 
 def calculate_line_distance(loc1: dict, loc2: dict) -> float:
     '''
@@ -28,7 +29,7 @@ def calculate_line_distance(loc1: dict, loc2: dict) -> float:
     dist = EARTH_RAD * c
     return dist
 
-def calculate_score(distance: float, scale=350_000) -> int:
+def calculate_score(distance: float, scale: int = None) -> int:
     '''
     Calculates score based on distance between guess and actual location.
     The smaller the distance, the bigger the score.
@@ -38,6 +39,11 @@ def calculate_score(distance: float, scale=350_000) -> int:
     :return: Score awarded for the guess
     :rtype: int
     '''
+    if not scale:
+        with current_app.app_context():
+            scale = current_app.config['SCORE_CALCULATION_SCALE']
+    if scale < 1:
+        raise ValueError('Scale must be bigger than zero')
     MAX_SCORE = 1000
 
     score = MAX_SCORE * math.exp(-distance / scale)

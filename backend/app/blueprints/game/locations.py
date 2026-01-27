@@ -21,12 +21,12 @@ def submit_location():
         return abort(400)
     if not session.get('location'):
         return abort(400)
-    target_loc = session.pop('location')
-    distance = calculate_line_distance(target_loc, data['guess'])
+    target = session.pop('location')
+    distance = calculate_line_distance(target, data['guess'])
     score = calculate_score(distance)
     result = {
         'guess': data['guess'],
-        'target_location': target_loc,
+        'target': target,
         'distance': distance,
         'score': score
     }

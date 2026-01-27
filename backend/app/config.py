@@ -49,6 +49,8 @@ class BaseConfig():
     SESSION_TYPE = 'redis'
     SESSION_REDIS = Redis(host=os.environ['REDIS_HOST'],
                           port=int(os.environ['REDIS_PORT']))
+    # Game config
+    SCORE_CALCULATION_SCALE = 300_000 # Distance after which score starts to drop drammatically, in metres
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
