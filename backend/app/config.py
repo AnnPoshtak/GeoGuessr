@@ -11,7 +11,7 @@ load_dotenv(ENV_PATH)
 class BaseConfig():
     SECRET_KEY = os.environ['SECRET_KEY']
     SESSION_COOKIE_HTTPONLY=True
-    SESSION_COOKIE_SAMESITE='Lax'
+    SESSION_COOKIE_SAMESITE='Strict'
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         user = os.environ['DB_USER']
@@ -55,10 +55,7 @@ class BaseConfig():
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     FLASK_ENV = 'DEVELOPMENT'
-    # ! The CSRF protection still has to be implemented
-    WTF_CSRF_ENABLED = False
 
 class TestingConfig(BaseConfig):
     TESTING = True
     FLASK_ENV = 'TESTING'
-    WTF_CSRF_ENABLED = False

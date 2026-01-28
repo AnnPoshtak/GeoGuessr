@@ -5,7 +5,6 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_marshmallow import Marshmallow
 from app.config import DevelopmentConfig
-from flask_wtf.csrf import CSRFProtect
 from authlib.integrations.flask_client import OAuth
 from flask_session import Session
 
@@ -14,7 +13,6 @@ db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 ma = Marshmallow()
-csrf = CSRFProtect()
 oauth = OAuth()
 sess = Session()
 
@@ -32,7 +30,6 @@ def create_app(config=DevelopmentConfig) -> Flask:
     migrate.init_app(app, db)
     cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     ma.init_app(app)
-    csrf.init_app(app)
     login_manager.init_app(app)
     oauth.init_app(app)
     sess.init_app(app)
@@ -54,9 +51,8 @@ def create_app(config=DevelopmentConfig) -> Flask:
 
     with app.app_context():
         db.create_all()
-        from .blueprints import oauth_bp, csrf_bp, users_bp, auth_bp, game_bp
+        from .blueprints import oauth_bp, users_bp, auth_bp, game_bp
         app.register_blueprint(oauth_bp, url_prefix='/oauth')
-        app.register_blueprint(csrf_bp, url_prefix='/csrf')
         app.register_blueprint(users_bp, url_prefix='/users')
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(game_bp, url_prefix='/game')
