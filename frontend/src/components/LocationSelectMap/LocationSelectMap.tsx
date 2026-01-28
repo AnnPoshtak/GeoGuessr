@@ -1,20 +1,21 @@
 import { type MapLocation } from "@/types/MapLocation";
 import { GoogleMap, Polyline, useJsApiLoader } from "@react-google-maps/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import GuessMarker from "../GuessMarker/GuessMarker";
-import { useMutation } from "@tanstack/react-query";
-import { default as submitGuessRequest } from "@/api/submitGuess/submitGuess";
 import TargetMarker from "../TargetMarker/TargetMarker";
-import queryClient from "@/api/queryClient";
-import type { GuessSubmitApiResponse } from "@/types/GuessSubmitInfo";
 import { RiPinDistanceFill } from "react-icons/ri";
+import { useGameContext } from "@/context/GameContext";
+import type { GuessSubmitApiResponse } from "@/types/GuessSubmitApiResponse";
+import type { UseMutationResult } from "@tanstack/react-query";
 
 interface LocationSelectMapProps {
     apiKey: string;
     className: string;
+    moveNext: () => void;
+    submitGuessMutation: UseMutationResult<GuessSubmitApiResponse, Error, MapLocation, unknown>,
 };
 
-function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
+function LocationSelectMap({ apiKey, className, moveNext, submitGuessMutation }: LocationSelectMapProps) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey,
@@ -24,33 +25,11 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
         draggableCursor: 'crosshair',
         draggingCursor: 'crosshair',
     };
-    const [guessLocation, setGuessLocation] = useState<MapLocation | null>(null);
+    const { guessLocation, setGuessLocation,
+        guessSubmitResponse, setMap } = useGameContext();
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-    const [submitInfo, setSubmitInfo] = useState<GuessSubmitApiResponse | null>(null);
-    const [map, setMap] = useState<google.maps.Map | null>(null);
 
-    const submitGuessMutation = useMutation(
-        {
-            mutationFn: async (location: MapLocation) => {
-                return await submitGuessRequest(location);
-            },
-            onSuccess: (data) => {
-                setSubmitInfo(data);
-                setIsSubmitted(true);
-
-                if (!map) return;
-                if (!guessLocation) return;
-                const bounds = new google.maps.LatLngBounds();
-
-                bounds.extend(guessLocation);
-                bounds.extend(data.target);
-                map.fitBounds(bounds);
-            },
-            onError: (err) => {
-                console.log(err);
-            }
-        }
-    );
+    useEffect(() => setIsSubmitted(!!guessSubmitResponse?.guess), [guessSubmitResponse]);
 
     const createMarker = (e: google.maps.MapMouseEvent) => {
         if (!e.latLng) return;
@@ -72,15 +51,6 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
         console.log('Guess submitted');
     };
 
-    const moveNext = () => {
-        queryClient.invalidateQueries({
-            queryKey: ['randomLocation'],
-        });
-        setGuessLocation(null);
-        setSubmitInfo(null);
-        setIsSubmitted(false);
-    };
-
     const lineSymbol = {
         path: "M 0,-1 0,1",
         strokeOpacity: 1,
@@ -91,14 +61,14 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
     if (!isLoaded) return <div>Loading...</div>;
     return <div className={className}>
         <GoogleMap onLoad={(m) => setMap(m)} onClick={createMarker} mapContainerClassName="w-full h-full border-0 rounded-2xl" options={mapOptions} center={mapLocation} zoom={1.5}>
-            {submitInfo?.target && guessLocation && < TargetMarker position={submitInfo?.target} />}
+            {guessSubmitResponse?.target && guessLocation && < TargetMarker position={guessSubmitResponse?.target} />}
             <Polyline path={
-                guessLocation && submitInfo?.target ? [
+                guessLocation && guessSubmitResponse?.target ? [
                     guessLocation,
-                    submitInfo?.target
+                    guessSubmitResponse?.target
                 ] : []} options={
                     {
-                        visible: isSubmitted && !!submitInfo?.target && !!guessLocation,
+                        visible: isSubmitted && !!guessSubmitResponse?.target && !!guessLocation,
                         strokeOpacity: 0,
                         icons: [
                             {
@@ -109,9 +79,9 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
                         ]
                     }
                 } />
-            {submitInfo && <div className="absolute rounded bg-neutral-800/70 text-neutral-50 p-2 bottom-2 left-1/2 -translate-x-1/2">
-                <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>{Math.floor(submitInfo.distance / 1000)}km</span></div>
-                <div>{submitInfo.score} points</div>
+            {guessSubmitResponse && <div className="absolute rounded bg-neutral-800/70 text-neutral-50 p-2 bottom-2 left-1/2 -translate-x-1/2">
+                <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>{Math.floor(guessSubmitResponse.distance / 1000)}km</span></div>
+                <div>{guessSubmitResponse.score} points</div>
             </div>}
             {guessLocation && <GuessMarker position={guessLocation} />}
         </GoogleMap>

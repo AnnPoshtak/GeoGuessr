@@ -1,9 +1,13 @@
 import getRandomLocation from "@/api/getRandomLocation/getRandomLocation";
+import queryClient from "@/api/queryClient";
+import submitGuess from "@/api/submitGuess/submitGuess";
 import GameUI from "@/components/GameUI/GameUI.tsx";
 import LocationSelectMap from "@/components/LocationSelectMap/LocationSelectMap";
 import StreetView from "@/components/StreetView/StreetView.tsx";
+import { useGameContext } from "@/context/GameContext";
+import type { MapLocation } from "@/types/MapLocation";
 import type { StreetViewLocationFromApi } from "@/types/StreetViewLocationFromApi";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -13,6 +17,37 @@ function SinglePlayer() {
         retry: false,
         refetchOnWindowFocus: false,
     });
+    const { guessLocation, map, setGuessSubmitResponse, setGuessLocation } = useGameContext();
+
+    const submitGuessMutation = useMutation(
+        {
+            mutationFn: async (location: MapLocation) => {
+                return await submitGuess(location);
+            },
+            onSuccess: (data) => {
+                setGuessSubmitResponse(data);
+
+                if (!map) return;
+                if (!guessLocation) return;
+                const bounds = new google.maps.LatLngBounds();
+
+                bounds.extend(guessLocation);
+                bounds.extend(data.target);
+                map.fitBounds(bounds);
+            },
+            onError: (err) => {
+                console.log(err);
+            }
+        }
+    );
+
+    const moveNext = () => {
+        queryClient.invalidateQueries({
+            queryKey: ['randomLocation'],
+        });
+        setGuessLocation(null);
+        setGuessSubmitResponse(null);
+    }
 
     if (isPending) return <div>Loading...</div>
     if (isError) return <div>Error</div>
@@ -39,7 +74,7 @@ function SinglePlayer() {
                     },
                 }}
             />
-            <LocationSelectMap apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
+            <LocationSelectMap submitGuessMutation={submitGuessMutation} moveNext={moveNext} apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
             hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1" />
             <GameUI />
         </div>
