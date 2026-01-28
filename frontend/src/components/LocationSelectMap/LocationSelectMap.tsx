@@ -3,10 +3,10 @@ import { GoogleMap, Polyline, useJsApiLoader } from "@react-google-maps/api";
 import { useState } from "react";
 import GuessMarker from "../GuessMarker/GuessMarker";
 import { useMutation } from "@tanstack/react-query";
-import submitLocation from "@/api/submitLocation/submitLocation";
+import { default as submitGuessRequest } from "@/api/submitGuess/submitGuess";
 import TargetMarker from "../TargetMarker/TargetMarker";
 import queryClient from "@/api/queryClient";
-import type { GuessSubmitInfoFromApi } from "@/types/GuessSubmitInfo";
+import type { GuessSubmitApiResponse } from "@/types/GuessSubmitInfo";
 import { RiPinDistanceFill } from "react-icons/ri";
 
 interface LocationSelectMapProps {
@@ -26,16 +26,15 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
     };
     const [guessLocation, setGuessLocation] = useState<MapLocation | null>(null);
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-    const [submitInfo, setSubmitInfo] = useState<GuessSubmitInfoFromApi | null>(null);
+    const [submitInfo, setSubmitInfo] = useState<GuessSubmitApiResponse | null>(null);
     const [map, setMap] = useState<google.maps.Map | null>(null);
 
-    const submitLocationMutation = useMutation(
+    const submitGuessMutation = useMutation(
         {
             mutationFn: async (location: MapLocation) => {
-                return await submitLocation(location);
+                return await submitGuessRequest(location);
             },
-            onSuccess: (data: GuessSubmitInfoFromApi) => {
-                if (!data) return;
+            onSuccess: (data) => {
                 setSubmitInfo(data);
                 setIsSubmitted(true);
 
@@ -69,7 +68,7 @@ function LocationSelectMap({ apiKey, className }: LocationSelectMapProps) {
 
     const submitGuess = () => {
         if (!guessLocation) return;
-        submitLocationMutation.mutate(guessLocation);
+        submitGuessMutation.mutate(guessLocation);
         console.log('Guess submitted');
     };
 

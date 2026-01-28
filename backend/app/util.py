@@ -31,10 +31,10 @@ def calculate_line_distance(loc1: dict, loc2: dict) -> float:
 
 def calculate_score(distance: float, scale: int = None) -> int:
     '''
-    Calculates score based on distance between guess and actual location.
+    Calculates score based on distance between guess and target location.
     The smaller the distance, the bigger the score.
     
-    :param distance: distance between guess and actual location, in metres
+    :param distance: distance between guess and target location, in metres
     :param scale: the distance at which score starts to drop a lot, in metres
     :return: Score awarded for the guess
     :rtype: int

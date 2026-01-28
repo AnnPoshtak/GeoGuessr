@@ -9,11 +9,7 @@ function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],
-        queryFn: async () => {
-            const resp = await getRandomLocation();
-            if (!resp) return;
-            return resp.json();
-        },
+        queryFn: async () => await getRandomLocation(),
         retry: false,
         refetchOnWindowFocus: false,
     });

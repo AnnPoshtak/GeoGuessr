@@ -1,18 +1,14 @@
-import config from "@/config";
+import type { StreetViewLocationFromApi } from "@/types/StreetViewLocationFromApi";
+import apiRequest from "../apiRequest/apiRequest";
 
 async function getRandomLocation() {
-    try {
-        const resp = await fetch(config.backendUrl + '/game/random_location/', {
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-        });
-        if (!resp.ok) throw new Error("Failed to fetch random location!");
-        return resp;
-    } catch (e) {
-        console.error((e as Error).message);
-    }
+    const data = await apiRequest<StreetViewLocationFromApi>('/game/random_location/', {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+    });
+    return data;
 }
 
 export default getRandomLocation;

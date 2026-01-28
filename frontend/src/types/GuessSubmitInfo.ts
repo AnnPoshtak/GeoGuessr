@@ -1,6 +1,6 @@
 import type { MapLocation } from "./MapLocation";
 
-export interface GuessSubmitInfoFromApi {
+export interface GuessSubmitApiResponse {
     guess: MapLocation;
     target: MapLocation;
     distance: number;
