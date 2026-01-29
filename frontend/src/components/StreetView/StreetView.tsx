@@ -5,7 +5,7 @@ interface StreetViewProps {
     apiKey: string;
     zoom: number;
     center: MapLocation;
-    className: string;
+    className?: string;
     panoramaProps: StreetViewPanoramaProps;
 }
 
@@ -33,18 +33,15 @@ function StreetView({ apiKey, zoom, center, className, panoramaProps }: StreetVi
     }
 
     return (
-        <>
-            <GoogleMap
-                mapContainerClassName={className}
-                center={center}
-                zoom={zoom}
-            >
-                <StreetViewPanorama
-                    {...streetViewProps}
-                />
-            </GoogleMap>
-        </>
-
+        <GoogleMap
+            mapContainerClassName={className}
+            center={center}
+            zoom={zoom}
+        >
+            <StreetViewPanorama
+                {...streetViewProps}
+            />
+        </GoogleMap>
     );
 }
 

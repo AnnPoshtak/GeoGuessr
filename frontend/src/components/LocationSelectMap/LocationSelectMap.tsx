@@ -10,7 +10,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 
 interface LocationSelectMapProps {
     apiKey: string;
-    className: string;
+    className?: string;
     moveNext: () => void;
     submitGuessMutation: UseMutationResult<GuessSubmitApiResponse, Error, MapLocation, unknown>,
 };
