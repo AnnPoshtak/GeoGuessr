@@ -1,0 +1,26 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="10 7 44 50"
+  width="30"
+  height="40"
+  fill="currentColor"
+>
+  <path
+    d="M32 2C20.4 2 11 11.4 11 23c0 15.8 21 39 21 39s21-23.2 21-39C53 11.4 43.6 2 32 2z"
+  />
+
+  <circle cx="32" cy="23" r="14" fill="white"/>
+
+  <g transform="translate(20 11)">
+    <path
+      d="M3 3H12.382
+         C12.7607 3 13.107 3.214 13.2764 3.55279
+         L14 5H20
+         C20.5523 5 21 5.44772 21 6V17
+         C21 17.5523 20.5523 18 20 18H13.618
+         C13.2393 18 12.893 17.786 12.7236 17.4472
+         L12 16H5V22H3V3Z"
+      fill="currentColor"
+    />
+  </g>
+</svg>
