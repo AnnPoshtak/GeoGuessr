@@ -3,6 +3,7 @@ import SinglePlayer from "./pages/SinglePlayer/SinglePlayer.tsx";
 import OAuthCallback from "./pages/OAuthCallback/OAuthCallback.tsx";
 import { Toaster } from "sonner";
 import { GameContextProvider } from "./context/GameContext.tsx";
+import Multiplayer from "./pages/MultiPlayer/MultiPlayer.tsx";
 
 function App() {
     return (
@@ -21,6 +22,11 @@ function App() {
                 <Route path="/" element={
                     <GameContextProvider>
                         <SinglePlayer />
+                    </GameContextProvider>
+                }></Route>
+                <Route path="/multiplayer" element={
+                    <GameContextProvider>
+                        <Multiplayer />
                     </GameContextProvider>
                 }></Route>
                 <Route path="/oauth/">

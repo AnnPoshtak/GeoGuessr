@@ -7,6 +7,8 @@ from flask_marshmallow import Marshmallow
 from app.config import DevelopmentConfig
 from authlib.integrations.flask_client import OAuth
 from flask_session import Session
+from flask_socketio import SocketIO
+import os
 
 cors = CORS()
 db = SQLAlchemy()
@@ -15,8 +17,10 @@ login_manager = LoginManager()
 ma = Marshmallow()
 oauth = OAuth()
 sess = Session()
+socketio = SocketIO()
 
 from .models import UserModel
+from .ws import *
 
 @login_manager.user_loader
 def load_user(id):
@@ -33,6 +37,8 @@ def create_app(config=DevelopmentConfig) -> Flask:
     login_manager.init_app(app)
     oauth.init_app(app)
     sess.init_app(app)
+    socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], logger=True,
+                      async_mode='threading')
 
     for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
         oauth.register(
