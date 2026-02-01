@@ -9,6 +9,7 @@ from authlib.integrations.flask_client import OAuth
 from flask_session import Session
 from flask_socketio import SocketIO
 import os
+from redis import Redis
 
 cors = CORS()
 db = SQLAlchemy()
@@ -16,8 +17,10 @@ migrate = Migrate()
 login_manager = LoginManager()
 ma = Marshmallow()
 oauth = OAuth()
-sess = Session()
+server_session = Session()
 socketio = SocketIO()
+session_redis = Redis(host=os.environ['REDIS_HOST'], port=int(os.environ['REDIS_PORT']))
+app_redis = Redis(host=os.environ['REDIS_HOST'], port=int(os.environ['REDIS_PORT']), decode_responses=True)
 
 from .models import UserModel
 from .ws import *
@@ -29,6 +32,9 @@ def load_user(id):
 def create_app(config=DevelopmentConfig) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config())
+    app.config.update({
+        'SESSION_REDIS': session_redis
+    })
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -36,7 +42,7 @@ def create_app(config=DevelopmentConfig) -> Flask:
     ma.init_app(app)
     login_manager.init_app(app)
     oauth.init_app(app)
-    sess.init_app(app)
+    server_session.init_app(app)
     socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], logger=True,
                       async_mode='threading')
 

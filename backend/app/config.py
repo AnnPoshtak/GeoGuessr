@@ -47,10 +47,11 @@ class BaseConfig():
     FRONTEND_OAUTH_CALLBACK_URL = f"{FRONTEND_URL}/oauth/callback/"
     # Flask session-related settings
     SESSION_TYPE = 'redis'
-    SESSION_REDIS = Redis(host=os.environ['REDIS_HOST'],
-                          port=int(os.environ['REDIS_PORT']))
     # Game config
     SCORE_CALCULATION_SCALE = 300_000 # Distance after which score starts to drop drammatically, in metres
+    MIN_PLAYERS = 2
+    GAMEROOM_EXPIRY_TIME = 86400 # 24 hours
+    STARTING_PLAYER_HEALTH = 5000
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
