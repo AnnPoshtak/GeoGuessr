@@ -10,19 +10,9 @@ load_dotenv(ENV_PATH)
 
 class BaseConfig():
     SECRET_KEY = os.environ['SECRET_KEY']
-    SESSION_COOKIE_HTTPONLY=True
-    SESSION_COOKIE_SAMESITE='Strict'
-    @property
-    def SQLALCHEMY_DATABASE_URI(self) -> str:
-        user = os.environ['DB_USER']
-        password = os.environ['DB_PASSWORD']
-        host = os.environ['DB_HOST']
-        port = os.environ['DB_PORT']
-        dbname = os.environ['DB_NAME']
-        return (
-            f'postgresql+psycopg2://{user}:{password}'
-            f'@{host}:{port}/{dbname}'
-        )
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Strict'
+    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URI']
     CORS_ORIGINS = {
         '/*': os.environ['CORS_ORIGINS']
     }
@@ -52,6 +42,13 @@ class BaseConfig():
     MIN_PLAYERS = 2
     GAMEROOM_EXPIRY_TIME = 86400 # 24 hours
     STARTING_PLAYER_HEALTH = 5000
+    GAME_PLAYERCOUNT = (2, 4)
+    GAME_TEAMS = {
+        0: 'red',
+        1: 'blue'
+    }
+    
+    REDIS_URL = os.environ['REDIS_URL']
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
@@ -60,3 +57,4 @@ class DevelopmentConfig(BaseConfig):
 class TestingConfig(BaseConfig):
     TESTING = True
     FLASK_ENV = 'TESTING'
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'

@@ -19,8 +19,8 @@ ma = Marshmallow()
 oauth = OAuth()
 server_session = Session()
 socketio = SocketIO()
-session_redis = Redis(host=os.environ['REDIS_HOST'], port=int(os.environ['REDIS_PORT']))
-app_redis = Redis(host=os.environ['REDIS_HOST'], port=int(os.environ['REDIS_PORT']), decode_responses=True)
+session_redis = Redis.from_url(os.environ['REDIS_URL'])
+app_redis =Redis.from_url(os.environ['REDIS_URL'], decode_responses=True) 
 
 from .models import UserModel
 from .ws import *
