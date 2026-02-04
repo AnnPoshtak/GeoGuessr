@@ -10,6 +10,7 @@ from flask_session import Session
 from flask_socketio import SocketIO
 import os
 from redis import Redis
+from app.core import GameQueueRepository, GameRoomRepository
 
 cors = CORS()
 db = SQLAlchemy()
@@ -21,6 +22,8 @@ server_session = Session()
 socketio = SocketIO()
 session_redis = Redis.from_url(os.environ['REDIS_URL'])
 app_redis = Redis.from_url(os.environ['REDIS_URL'], decode_responses=True) 
+game_queue = GameQueueRepository(app_redis)
+game_room = GameRoomRepository(app_redis)
 
 from .models import UserModel
 from . import ws

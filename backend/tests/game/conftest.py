@@ -1,6 +1,5 @@
 import pytest
-from app.core import GameRoom
-from app import app_redis
+from app import app_redis, game_room
 
 @pytest.fixture
 def test_game_room(mocker):
@@ -20,5 +19,5 @@ def test_game_room(mocker):
         "heading": 269
     }
     mocker.patch('app.core.game_room.get_random_location', return_value=loc)
-    game_id = GameRoom.create_game(players)
+    game_id = game_room.create_game(players)
     return app_redis.hgetall(game_id)

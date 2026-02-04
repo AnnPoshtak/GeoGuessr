@@ -1,14 +1,14 @@
 import pytest
-from app.core import GameQueue
+from app.core import GameQueueRepository
 from app.factories import UserFactory
 from flask_login import login_user
 import json
 
 def test_queue_join_empty(socket_client, mocker, app):
-    mocker.patch.object(GameQueue, 'join_queue', return_value=None)
-    mocker.patch.object(GameQueue, 'get_queue_key', return_value='testqueue')
+    mocker.patch.object(GameQueueRepository, 'join_queue', return_value=None)
+    mocker.patch.object(GameQueueRepository, 'get_queue_key', return_value='testqueue')
     u = UserFactory()
-    mocker.patch.object(GameQueue, 'get_queue', return_value=[u.id])
+    mocker.patch.object(GameQueueRepository, 'get_queue', return_value=[u.id])
     with app.test_request_context():
         login_user(u)
     socket_client.connect('/queue')
@@ -58,10 +58,10 @@ def test_queue_join_in_game(socket_client, client, app):
     assert len(socket_client.get_received('/queue')) == 0
 
 def test_queue_join_non_empty(socket_client, mocker, app):
-    mocker.patch.object(GameQueue, 'join_queue', return_value='test')
-    mocker.patch.object(GameQueue, 'get_queue_key', return_value='testqueue')
+    mocker.patch.object(GameQueueRepository, 'join_queue', return_value='test')
+    mocker.patch.object(GameQueueRepository, 'get_queue_key', return_value='testqueue')
     u = UserFactory()
-    mocker.patch.object(GameQueue, 'get_queue', return_value=[u.id])
+    mocker.patch.object(GameQueueRepository, 'get_queue', return_value=[u.id])
     with app.test_request_context():
         login_user(u)
     socket_client.connect('/queue')
@@ -74,10 +74,10 @@ def test_queue_join_non_empty(socket_client, mocker, app):
     assert int(json.loads(resp['args'][0]['queue'])[0]) == u.id
 
 def test_queue_leave(socket_client, mocker, app, client):
-    leave_spy = mocker.spy(GameQueue, 'leave_queue')
-    mocker.patch.object(GameQueue, 'is_player_in_queue', return_value=True)
+    leave_spy = mocker.spy(GameQueueRepository, 'leave_queue')
+    mocker.patch.object(GameQueueRepository, 'is_player_in_queue', return_value=True)
     u = UserFactory()
-    mocker.patch.object(GameQueue, 'get_queue', return_value=[])
+    mocker.patch.object(GameQueueRepository, 'get_queue', return_value=[])
     with app.test_request_context():
         login_user(u)
         with client.session_transaction() as sess:
@@ -102,7 +102,7 @@ def test_queue_leave_in_game(socket_client, app, client):
     assert len(resp) == 0
 
 def test_queue_leave_player_not_in_queue(socket_client, mocker, app, client):
-    mocker.patch.object(GameQueue, 'is_player_in_queue', return_value=False)
+    mocker.patch.object(GameQueueRepository, 'is_player_in_queue', return_value=False)
     u = UserFactory()
     with app.test_request_context():
         login_user(u)
@@ -112,9 +112,9 @@ def test_queue_leave_player_not_in_queue(socket_client, mocker, app, client):
     assert len(resp) == 0
 
 def test_queue_leave(socket_client, mocker, app):
-    mocker.patch.object(GameQueue, 'is_player_in_queue', return_value=True)
+    mocker.patch.object(GameQueueRepository, 'is_player_in_queue', return_value=True)
     u = UserFactory()
-    mocker.patch.object(GameQueue, 'get_queue', return_value=[])
+    mocker.patch.object(GameQueueRepository, 'get_queue', return_value=[])
     with app.test_request_context():
         login_user(u)
     socket_client.connect('/queue')
