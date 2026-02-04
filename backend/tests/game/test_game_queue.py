@@ -75,7 +75,7 @@ def test_leave_queue(app):
     with app.test_request_context():
         GameQueue.join_queue(1, 2)
     assert int(app_redis.lpop(key)) == 1
-    GameQueue.leave_queue(1)
+    GameQueue.leave_queue(1, key)
     assert app_redis.llen(key) == 0
 
 def test_is_player_in_queue(app):

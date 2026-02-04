@@ -1,27 +1,37 @@
-import { socket } from '@/ws/wsClient';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { queue } from '@/ws/wsClient';
 
 function Multiplayer() {
+    const [players, setPlayers] = useState([]);
     useEffect(() => {
-        socket.on('connect', () => {
-            console.log('Connected');
+        queue.on('queue_joined', (data) => {
+            console.log('Joined queue', data);
+            setPlayers(JSON.parse(data['queue']));
         });
-        socket.on('disconnect', () => {
-            console.log('Disconected!');
+        queue.on('queue_left', (data) => {
+            console.log('Left queue', data);
+            setPlayers(JSON.parse(data['queue']));
         });
 
+
         return () => {
-            socket.off('connect');
-            socket.off('disconnect');
+            queue.off('queue_joined');
+            queue.off('queue_left');
         };
     }, []);
-    const sendMessage = () => {
-        console.log('Message sent!');
-        socket.send("Hello, world!");
+    const join = () => {
+        queue.emit('join', {
+            player_count: 3
+        });
+    };
+    const leave = () => {
+        queue.emit('leave');
     };
     return <div>
         <div>This is multiplayer page</div>
-        <button className='bg-red-600 rounded p-2' onClick={sendMessage}>Send message!</button>
+        <div>{players}</div>
+        <button className='bg-green-600 rounded p-2' onClick={join}>Join!</button>
+        <button className='bg-red-600 rounded p-2' onClick={leave}>Leave!</button>
     </div>;
 }
 

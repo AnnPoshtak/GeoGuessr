@@ -1,9 +1,10 @@
 from app import app_redis
-from app.core import GameRoom
+from app.core import GameRoom, validate_player_count
 from flask import current_app
 import random
 import numpy as np
 
+# TODO: rewrite this class and GameRoom class, so redis instance can be passed to init
 class GameQueue:
     '''
     A class used to handle matchmaking logic. Used only to make redis interactions.
@@ -13,19 +14,20 @@ class GameQueue:
     queue_key = 'gamequeue'
 
     @staticmethod
-    def get_queue(player_count: int) -> list:
+    def get_queue(identifier: str | int) -> list:
         '''
         A helper function used to acces the game queue
         
-        :param player_count: player count used to access queue for specific player count
-        :type player_count: int
+        :param identifier: can be either queue key or player count
+        :type identifier: str | int
         :return: all players in the queue
         :rtype: list
         '''
-        with current_app.app_context():
-            if not player_count in current_app.config['GAME_PLAYERCOUNT']:
-                raise ValueError(f'Wrong player count. Valid ones are: {current_app.config["GAME_PLAYERCOUNT"]}')
-        key = GameQueue.get_queue_key(player_count)
+        if isinstance(identifier, int):
+           
+            key = GameQueue.get_queue_key(identifier)
+        else:
+            key = identifier
         return app_redis.lrange(key, 0, -1)
     
     @staticmethod
@@ -41,9 +43,7 @@ class GameQueue:
     @staticmethod
     def get_queue_key(player_count: int) -> str:
         '''A helper function used to get a queue key for `player_count`'''
-        with current_app.app_context():
-            if not player_count in current_app.config['GAME_PLAYERCOUNT']:
-                raise ValueError(f'Wrong player count. Valid ones are: {current_app.config["GAME_PLAYERCOUNT"]}')
+        validate_player_count(player_count)
         return f'{GameQueue.queue_key}:{player_count}'
     
     @staticmethod
@@ -58,7 +58,7 @@ class GameQueue:
         return res
 
     @staticmethod
-    def join_queue(player_id: int, player_count: int) -> None:
+    def join_queue(player_id: int, player_count: int) -> None | str:
         '''
         Joins player `player_id` to `player_count`.
         If `queue length + 1` is equal to player_count of this queue, then remove the `player_count - 1` 
@@ -73,9 +73,7 @@ class GameQueue:
         :type player_count: int
         '''
         # TODO: create a separate set to track users in the queue instead of current implementation
-        with current_app.app_context():
-            if not player_count in current_app.config['GAME_PLAYERCOUNT']:
-                raise ValueError(f'Wrong player count. Valid ones are: {current_app.config["GAME_PLAYERCOUNT"]}')
+        validate_player_count(player_count)
         q = GameQueue.get_queue(player_count)
         key = GameQueue.get_queue_key(player_count)
         if GameQueue.is_player_in_queue(player_id):
@@ -83,19 +81,15 @@ class GameQueue:
         if len(q) == player_count - 1:
             players = app_redis.rpop(key, player_count - 1)
             players.append(player_id)
-            GameQueue.create_room(players)
-            return
+            game = GameQueue.create_room(players)
+            return game
         
         app_redis.lpush(key, player_id)
 
     @staticmethod
-    def leave_queue(player_id: int) -> None:
-        '''Remove player `player_id` from queue he is currently in'''
-        queues = GameQueue.get_all_queue_keys()
-        for key in queues:
-            status = app_redis.lrem(key, 1, player_id)
-            if status == 0:
-                return
+    def leave_queue(player_id: int, queue: str) -> None:
+        '''Remove player `player_id` from queue `queue`'''
+        app_redis.lrem(queue, 1, player_id)
 
     @staticmethod
     def form_teams(players: list, teams: dict) -> list[dict]:

@@ -20,10 +20,10 @@ oauth = OAuth()
 server_session = Session()
 socketio = SocketIO()
 session_redis = Redis.from_url(os.environ['REDIS_URL'])
-app_redis =Redis.from_url(os.environ['REDIS_URL'], decode_responses=True) 
+app_redis = Redis.from_url(os.environ['REDIS_URL'], decode_responses=True) 
 
 from .models import UserModel
-from .ws import *
+from . import ws
 
 @login_manager.user_loader
 def load_user(id):
@@ -43,8 +43,10 @@ def create_app(config=DevelopmentConfig) -> Flask:
     login_manager.init_app(app)
     oauth.init_app(app)
     server_session.init_app(app)
-    socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], logger=True,
-                      async_mode='threading')
+    # ! Remove logger=True in production
+    socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], 
+                      logger=True, async_mode='threading',
+                      manage_session=False)
 
     for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
         oauth.register(

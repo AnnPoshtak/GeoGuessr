@@ -11,11 +11,9 @@ load_dotenv(ENV_PATH)
 class BaseConfig():
     SECRET_KEY = os.environ['SECRET_KEY']
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Strict'
+    SESSION_COOKIE_SAMESITE = 'Lax' # Set to Lax from Strict because OAuth will not work otherwise
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URI']
-    CORS_ORIGINS = {
-        '/*': os.environ['CORS_ORIGINS']
-    }
+    CORS_ORIGINS = [os.environ['CORS_ORIGINS'].strip("'\"")]
     OAUTH_PROVIDERS = {
         'google': {
             'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
@@ -32,7 +30,7 @@ class BaseConfig():
             'scopes': ['email']
         },
     }
-    FRONTEND_URL = os.environ['FRONTEND_URL'].rstrip('/')
+    FRONTEND_URL = os.environ['FRONTEND_URL']
     # An url for frontend oauth callback
     FRONTEND_OAUTH_CALLBACK_URL = f"{FRONTEND_URL}/oauth/callback/"
     # Flask session-related settings
