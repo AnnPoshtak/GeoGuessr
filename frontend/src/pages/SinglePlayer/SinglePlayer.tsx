@@ -11,30 +11,33 @@ import { useGameContext } from "@/context/GameContext";
 import type { MapLocation } from "@/interfaces/MapLocation";
 import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useRef } from "react";
 import { RiPinDistanceFill } from "react-icons/ri";
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],
-        queryFn: async () => await getRandomLocation(),
+        queryFn: async () => {
+            const data = await getRandomLocation();
+            if (viewRef.current) {
+                viewRef.current.setPov({
+                    heading: data.heading,
+                    pitch: 5
+                });
+                viewRef.current.setPosition({
+                    lat: data.lat,
+                    lng: data.lng,
+                });
+            };
+            return data;
+        },
         retry: false,
         refetchOnWindowFocus: false,
     });
     const { setIsSubmitted, guessLocation, map, guessSubmitResponse, setGuessSubmitResponse, setGuessLocation } = useGameContext();
 
-    const initialPanorama = useMemo(() => {
-        if (!location) return;
-        return {
-            center: { lat: location.lat, lng: location.lng },
-            pov: {
-                heading: location.heading,
-                pitch: 5,
-            },
-        }
-    }, [location]);
-
+    const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
     useEffect(() => setIsSubmitted(!!guessSubmitResponse?.guess), [guessSubmitResponse]);
 
@@ -79,15 +82,24 @@ function SinglePlayer() {
 
     return (
         <div>
-            {initialPanorama && <StreetView
+            {location && <StreetView
                 apiKey={apiKey}
                 zoom={14}
-                center={initialPanorama.center}
                 className="w-full h-full absolute z-10 top-0 right-0"
                 panoramaProps={{
+                    onLoad(v) {
+                        viewRef.current = v;
+                        if (!location) return;
+                        v.setPov({
+                            heading: location.heading,
+                            pitch: 5,
+                        });
+                        v.setPosition({
+                            lat: location.lat, lng: location.lng
+                        });
+                    },
                     options:
                     {
-                        pov: initialPanorama.pov,
                         zoom: 0.5,
                         motionTracking: false,
                         addressControl: false,

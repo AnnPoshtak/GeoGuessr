@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gameQueue, gameRoom } from '@/ws/wsClient';
 import GameUI from '@/components/GameUI/GameUI';
 import LocationSelectMap from '@/components/LocationSelectMap/LocationSelectMap';
@@ -21,11 +21,11 @@ function Multiplayer() {
     const [gameKey, setGameKey] = useState<string | null>(null);
     const [isJoined, setIsJoined] = useState<boolean>(false);
     const [roundData, setRoundData] = useState<RoundData | null>(null);
-    const [center, setCenter] = useState<MapLocation | null>();
-    const [heading, setHeading] = useState<number | null>();
     const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
 
     const { guessLocation, map, setGuessLocation } = useGameContext();
+
+    const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
     const { data: game } = useQuery<GameRoom | null>({
         queryKey: ['game', gameKey],
@@ -33,8 +33,16 @@ function Multiplayer() {
             console.log('Fetching')
             console.log('Fetching game...');
             const data = await fetchGame();
-            setCenter({ lat: data.location.lat, lng: data.location.lng });
-            setHeading(data.location.heading);
+            if (viewRef.current) {
+                viewRef.current.setPov({
+                    heading: data.location.heading,
+                    pitch: 5
+                });
+                viewRef.current.setPosition({
+                    lat: data.location.lat,
+                    lng: data.location.lng,
+                });
+            };
             return data;
         },
         enabled: isJoined,
@@ -119,21 +127,26 @@ function Multiplayer() {
     };
 
     return <>
-        {game && center && heading ? <>
+        {game ? <>
             <div>
                 <StreetView
                     apiKey={apiKey}
                     zoom={14}
-                    center={center}
                     className="w-full h-full absolute z-10 top-0 right-0"
                     panoramaProps={{
+                        onLoad(v) {
+                            viewRef.current = v;
+                            if (!game) return;
+                            v.setPov({
+                                heading: game.location.heading,
+                                pitch: 5,
+                            });
+                            v.setPosition({
+                                lat: game.location.lat, lng: game.location.lng
+                            });
+                        },
                         options:
                         {
-                            pov:
-                            {
-                                heading: heading,
-                                pitch: 5
-                            },
                             zoom: 0.5,
                             motionTracking: false,
                             addressControl: false,
