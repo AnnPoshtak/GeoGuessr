@@ -69,6 +69,7 @@ function Multiplayer() {
                 });
                 setGuessLocation(null);
                 setRoundData(null);
+                setIsSubmitted(false);
                 setAllGuesses([]);
             }, 6000);
 
