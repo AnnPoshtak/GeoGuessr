@@ -75,6 +75,7 @@ class GameQueueRepository(RedisRepository):
             return
         if len(q) == player_count - 1:
             players = self.redis.rpop(key, player_count - 1)
+            self.redis.srem(self.players_key, *players)
             players.append(player_id)
             game = self.create_room(players)
             return game

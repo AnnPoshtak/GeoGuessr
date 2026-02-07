@@ -11,15 +11,18 @@ def test_game_queue_join_empty(app):
         game_queue.join_queue(1, 2)
     assert int(app_redis.lpop(key)) == 1
 
-def test_game_queue_join_non_empty(mocker, app):
+def test_game_queue_join_game_start(mocker, app):
     key = 'gamequeue:2'
+    pl = 'gamequeue:all_players'
     game_key = uuid.uuid4()
     app_redis.lpush(key, 1)
+    app_redis.sadd(pl, 1)
     mocker.patch.object(uuid, 'uuid4', return_value=game_key)
     with app.test_request_context():
         game_queue.join_queue(2, 2)
     game_key = f'gameroom:{game_key.hex}'
     assert app_redis.llen(key) == 0
+    assert app_redis.scard(pl) == 0
     assert app_redis.hgetall(game_key)
 
 def test_join_queue_while_in_another_queue(app):

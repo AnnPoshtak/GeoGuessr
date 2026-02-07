@@ -13,6 +13,8 @@ class QueueNamespace(Namespace):
         #     return
         if not 'player_count' in data:
             return
+        if game_queue.is_player_in_queue(current_user.id):
+            return
         try:
             player_count = int(data['player_count'])
             validate_player_count(player_count)
