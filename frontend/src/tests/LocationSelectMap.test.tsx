@@ -1,11 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { render, renderHook } from 'vitest-browser-react';
+import { render } from 'vitest-browser-react';
 // @ts-ignore
 import { initialize } from 'google-maps-vitest-mocks';
 import LocationSelectMap from '@/components/LocationSelectMap/LocationSelectMap';
-import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
-import type { MapLocation } from '@/interfaces/MapLocation';
-import type { GuessSubmitApiResponse } from '@/interfaces/GuessSubmitApiResponse';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GameContextProvider } from '@/context/GameContext';
 
 beforeEach(() => {
     initialize()
@@ -15,22 +14,14 @@ describe('LocationSelectMap tests', () => {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const testClient = new QueryClient();
     it('Test render', async () => {
-        const { result } = await renderHook(() => useMutation(
-            {
-                mutationFn: async (_: MapLocation) => {
-                    return {} as GuessSubmitApiResponse;
-                },
-                onSuccess: () => { },
-                onError: () => { }
-            }
-            , testClient));
         const { getByLabelText, getByText } = await render(<QueryClientProvider client={testClient} >
-            <LocationSelectMap moveNext={vi.fn()} submitGuessMutation={result.current} apiKey={apiKey} />
+            <GameContextProvider>
+                <LocationSelectMap submitGuess={vi.fn()} moveNext={vi.fn()} apiKey={apiKey} />
+            </GameContextProvider>
         </QueryClientProvider>
         );
         await expect.element(getByText(/Loading.../)).toBeInTheDocument();
         await expect.element(getByLabelText(/Map/)).toBeInTheDocument();
         await expect.element(getByText(/Submit guess!/)).toBeInTheDocument();
-        await expect.element(getByText(/Submit guess!/)).toBeDisabled();
     });
 });

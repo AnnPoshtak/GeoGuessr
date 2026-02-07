@@ -24,6 +24,7 @@ const vitestConf = defineVitestConfig({
         { browser: 'chromium' }
       ]
     },
+    testTimeout: 2000,
     setupFiles: ['./vitest.setup.ts']
   }
 });

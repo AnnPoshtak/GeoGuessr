@@ -9,7 +9,7 @@ interface LocationSelectMapProps {
     moveNext: () => void;
     submitGuess: () => void,
     isMoveNextBtnEnabled?: boolean,
-    children: ReactNode
+    children?: ReactNode
 };
 
 function LocationSelectMap({ apiKey, className, moveNext, submitGuess, isMoveNextBtnEnabled, children }: LocationSelectMapProps) {

@@ -13,10 +13,7 @@ describe('GuessMarker tests', () => {
   it('Test render', async () => {
     const { getByLabelText, getByText } = await render(<StreetView className='test-map' zoom={0} panoramaProps={{
       options: {}
-    }} apiKey={apiKey} center={{
-      lat: 0,
-      lng: 0
-    }} />);
+    }} apiKey={apiKey} />);
     await expect.element(getByText(/Loading.../)).toBeInTheDocument();
     await expect.element(getByLabelText(/Map/).nth(0)).toBeInTheDocument();
   });
