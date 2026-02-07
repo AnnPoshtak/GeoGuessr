@@ -67,7 +67,11 @@ def test_move_next_round(test_game_room, mocker):
     game_id = f"gameroom:{test_game_room['id']}"
     players = game_room.get_player_ids(game_id)
     players = game_room.get_player_ids(game_id)
-    app_redis.hset(f'{game_id}:players:{players[0]}', 'submitted_guess', json.dumps(True))
+    guess = {
+        "lat": 12, 
+        "lng": 15, 
+    }
+    app_redis.hset(f'{game_id}:players:{players[0]}', 'guess', json.dumps(guess))
     assert int(app_redis.hget(game_id, 'round')) == 1
     assert app_redis.hget(game_id, 'location') == test_game_room['location']
     loc = {
@@ -79,7 +83,7 @@ def test_move_next_round(test_game_room, mocker):
     game_room.move_next_round(game_id)
     assert int(app_redis.hget(game_id, 'round')) == 2
     assert app_redis.hget(game_id, 'location') == json.dumps(loc)
-    assert app_redis.hget(f'{game_id}:players:{players[0]}', 'submitted_guess') == json.dumps(False)
+    assert app_redis.hget(f'{game_id}:players:{players[0]}', 'guess') == json.dumps(None)
 
 def test_end_game(test_game_room, mocker):
     game_id = f"gameroom:{test_game_room['id']}"

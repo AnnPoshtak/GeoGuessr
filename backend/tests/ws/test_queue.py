@@ -69,9 +69,8 @@ def test_queue_join_non_empty(socket_client, mocker, app):
         'player_count': 2,
     }, namespace='/queue')
     resp = socket_client.get_received('/queue')[0]
-    assert resp['name'] == 'queue_joined'
-    assert resp['args'][0]['game'] == 'test'
-    assert int(json.loads(resp['args'][0]['queue'])[0]) == u.id
+    assert resp['name'] == 'game_started'
+    assert resp['args'][0]['game_key'] == 'test'
 
 def test_queue_leave(socket_client, mocker, app, client):
     leave_spy = mocker.spy(GameQueueRepository, 'leave_queue')

@@ -1,38 +1,179 @@
 import { useEffect, useState } from 'react';
-import { queue } from '@/ws/wsClient';
+import { gameQueue, gameRoom } from '@/ws/wsClient';
+import GameUI from '@/components/GameUI/GameUI';
+import LocationSelectMap from '@/components/LocationSelectMap/LocationSelectMap';
+import StreetView from '@/components/StreetView/StreetView';
+import { useQuery } from '@tanstack/react-query';
+import { useGameContext } from '@/context/GameContext';
+import queryClient from '@/api/queryClient';
+import type { GameRoom } from '@/interfaces/GameRoom';
+import submitGuess from '@/ws/submitGuess';
+import fetchGame from '@/ws/fetchGame';
+import Distance from '@/components/Distance/Distance';
+import GuessMarker from '@/components/GuessMarker/GuessMarker';
+import type { RoundData } from '@/interfaces/RoundData';
+import { RiPinDistanceFill } from 'react-icons/ri';
+import TargetMarker from '@/components/TargetMarker/TargetMarker';
+import { type MapLocation } from '@/interfaces/MapLocation';
 
 function Multiplayer() {
     const [players, setPlayers] = useState([]);
-    useEffect(() => {
-        queue.on('queue_joined', (data) => {
-            console.log('Joined queue', data);
-            setPlayers(JSON.parse(data['queue']));
-        });
-        queue.on('queue_left', (data) => {
-            console.log('Left queue', data);
-            setPlayers(JSON.parse(data['queue']));
-        });
+    const [gameKey, setGameKey] = useState<string | null>(null);
+    const [isJoined, setIsJoined] = useState<boolean>(false);
+    const [roundData, setRoundData] = useState<RoundData | null>(null);
+    const [center, setCenter] = useState<MapLocation | null>();
+    const [heading, setHeading] = useState<number | null>();
+    const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
 
+    const { guessLocation, map, setGuessLocation } = useGameContext();
+
+    const { data: game } = useQuery<GameRoom | null>({
+        queryKey: ['game', gameKey],
+        queryFn: async () => {
+            console.log('Fetching')
+            console.log('Fetching game...');
+            const data = await fetchGame();
+            setCenter({ lat: data.location.lat, lng: data.location.lng });
+            setHeading(data.location.heading);
+            return data;
+        },
+        enabled: isJoined,
+        staleTime: Infinity
+    });
+
+    useEffect(() => {
+        if (!isJoined || !gameKey) return;
+        gameRoom.on('new_round', async (data: RoundData) => {
+            console.log('New Round!');
+            if (!map) return;
+            const bounds = new google.maps.LatLngBounds();
+            for (let g of Object.values(data.player_data)) {
+                setAllGuesses(p => [...p, g.guess]);
+                bounds.extend(g.guess);
+            }
+            bounds.extend(data.target);
+
+            setRoundData(data);
+            map.fitBounds(bounds);
+            setTimeout(async () => {
+                await queryClient.invalidateQueries({
+                    queryKey: ['game', gameKey],
+                });
+                setGuessLocation(null);
+                setRoundData(null);
+                setAllGuesses([]);
+            }, 6000);
+
+        });
 
         return () => {
-            queue.off('queue_joined');
-            queue.off('queue_left');
+            gameRoom.off('new_round');
+        }
+    }, [isJoined, gameKey, map]);
+
+    useEffect(() => {
+        gameQueue.on('queue_joined', (data) => {
+            console.log('Joined queue');
+            setPlayers(JSON.parse(data['queue']));
+        });
+        gameQueue.on('game_started', (data) => {
+            setGameKey(data.game_key);
+            setPlayers([]);
+            gameRoom.emit('join', {
+                'game_key': data.game_key
+            })
+        });
+
+        gameQueue.on('queue_left', (data) => {
+            console.log('Left queue');
+            setPlayers(JSON.parse(data['queue']));
+        });
+
+        gameRoom.on('game_joined', () => {
+            setIsJoined(true);
+        });
+
+        return () => {
+            gameQueue.off('queue_joined');
+            gameQueue.off('queue_left');
+            gameQueue.off('game_started');
+            gameQueue.off('game_joined');
         };
     }, []);
     const join = () => {
-        queue.emit('join', {
-            player_count: 3
+        gameQueue.emit('join', {
+            player_count: 2
         });
     };
+
     const leave = () => {
-        queue.emit('leave');
+        gameQueue.emit('leave');
     };
-    return <div>
-        <div>This is multiplayer page</div>
-        <div>{players}</div>
-        <button className='bg-green-600 rounded p-2' onClick={join}>Join!</button>
-        <button className='bg-red-600 rounded p-2' onClick={leave}>Leave!</button>
-    </div>;
+
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+
+
+    const submit = () => {
+        if (!guessLocation) return;
+        submitGuess(guessLocation);
+    };
+
+    return <>
+        {game && center && heading ? <>
+            <div>
+                <StreetView
+                    apiKey={apiKey}
+                    zoom={14}
+                    center={center}
+                    className="w-full h-full absolute z-10 top-0 right-0"
+                    panoramaProps={{
+                        options:
+                        {
+                            pov:
+                            {
+                                heading: heading,
+                                pitch: 5
+                            },
+                            zoom: 0.5,
+                            motionTracking: false,
+                            addressControl: false,
+                            fullscreenControl: false,
+                        },
+                    }}
+                />
+                <LocationSelectMap submitGuess={submit} moveNext={() => { }} apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
+            hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1">
+                    {roundData ? <>
+                        <TargetMarker position={roundData.target} />
+                        {allGuesses.map(g => <div key={g.lat + g.lng}>
+                            <Distance path={g ? [
+                                g,
+                                roundData.target
+                            ] : []} visible={!!roundData} />
+
+                            <GuessMarker position={g} />
+                            {roundData &&
+                                <div className="absolute rounded bg-neutral-800/70 text-neutral-50
+                                p-2 bottom-2 left-1/2 -translate-x-1/2">
+                                    <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>x km</span></div>
+                                    <div>x points</div>
+                                </div>
+                            }
+                        </div>)
+                        }
+
+                    </> : guessLocation && <GuessMarker position={guessLocation} />
+                    }
+                </LocationSelectMap>
+                <GameUI />
+            </div>
+        </> : <div>
+            <div>This is multiplayer page</div>
+            <div>{players}</div>
+            <button className='bg-green-600 rounded p-2' onClick={join}>Join!</button>
+            <button className='bg-red-600 rounded p-2' onClick={leave}>Leave!</button>
+        </div>}
+    </>;
 }
 
 export default Multiplayer;

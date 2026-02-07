@@ -1,6 +1,6 @@
-import type { MapLocation } from "@/types/MapLocation";
+import type { MapLocation } from "@/interfaces/MapLocation";
 import apiRequest from "../apiRequest/apiRequest";
-import type { GuessSubmitApiResponse } from "@/types/GuessSubmitApiResponse";
+import type { GuessSubmitApiResponse } from "@/interfaces/GuessSubmitApiResponse";
 
 async function submitGuess(location: MapLocation) {
     const body = {

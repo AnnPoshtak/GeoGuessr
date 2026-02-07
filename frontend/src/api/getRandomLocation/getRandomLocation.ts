@@ -1,4 +1,4 @@
-import type { StreetViewLocationFromApi } from "@/types/StreetViewLocationFromApi";
+import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 import apiRequest from "../apiRequest/apiRequest";
 
 async function getRandomLocation() {

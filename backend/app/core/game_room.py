@@ -41,25 +41,64 @@ class GameRoomRepository(RedisRepository):
             'id': game_id,
             'round': 1,
             'location': json.dumps(location),
-            'player_ids': []
+            'player_ids': [],
+            'teams': []
         }
         pipe = self.redis.pipeline()
         for p in players:
             pl_dict = {
                 'id': p['id'],
                 'health': STARTING_HEALTH,
-                'submitted_guess': json.dumps(False),
+                'guess': json.dumps(None),
                 'team': p['team']
             }
+            if not p['team'] in game_mapping['teams']:
+                game_mapping['teams'].append(p['team'])
             game_mapping['player_ids'].append(p['id'])
             player_key = f'{game_key}:players:{p["id"]}'
+            team_key = f"{game_key}:team:{p['team']}"
+            pipe.sadd(team_key, p['id'])
             pipe.hset(player_key, mapping=pl_dict)
             pipe.expire(player_key, EXPIRY_TIME)
+
         game_mapping['player_ids'] = json.dumps(game_mapping['player_ids'])
+        game_mapping['teams'] = json.dumps(game_mapping['teams'])
         pipe.hset(game_key, mapping=game_mapping)
         pipe.expire(game_key, EXPIRY_TIME)
         pipe.execute()
         return game_key
+    
+    def get_game(self, game_id: str) -> dict:
+        return self.redis.hgetall(game_id)
+
+    def get_player(self, game_id: str, player_id: int) -> dict:
+        return self.redis.hgetall(f'{game_id}:players:{player_id}')
+    
+    def get_players_by_teams(self, game_id: str) -> dict[str, list]:
+        game = self.get_game(game_id)
+        teams = {
+            t: [] for t in json.loads(game['teams'])
+        } 
+        for p in self.get_player_ids(game_id):
+            player = self.get_player(game_id, p)
+            teams[player['team']].append(p)
+
+        return teams
+        
+    
+    def all_players_submitted(self, game_id: str) -> bool:
+        players = self.get_player_ids(game_id)
+        for p in players:
+            if not json.loads(self.redis.hget(f'{game_id}:players:{p}', 'guess')):
+                return False
+        return True
+    
+    def submit_guess(self, game_id: str, player_id: int, guess: dict):
+        if not player_id in self.get_player_ids(game_id):
+            raise ValueError(f'Player with id {player_id} does not belong to this game!')
+        
+        self.redis.hset(f'{game_id}:players:{player_id}', 'guess', json.dumps(guess))
+        self.update_game_expiry(game_id)
     
     def get_player_ids(self, game_id: str) -> list[int]:
         '''
@@ -122,7 +161,7 @@ class GameRoomRepository(RedisRepository):
         self.redis.hset(game_id, 'location', new_location)
         players = self.get_player_ids(game_id)
         for p in players:
-            self.redis.hset(f'{game_id}:players:{p}', 'submitted_guess', json.dumps(False))
+            self.redis.hset(f'{game_id}:players:{p}', 'guess', json.dumps(None))
         self.update_game_expiry(game_id)
         return curr_round
 
@@ -135,7 +174,9 @@ class GameRoomRepository(RedisRepository):
         '''
         player_ids = self.get_player_ids(game_id)
         pipe = self.redis.pipeline()
+        game = self.get_game(game_id)
         players = [f'{game_id}:players:{p}' for p in player_ids]
-        pipe.delete(*players)
+        teams = [f'{game_id}:team:{t}' for t in json.loads(game['teams'])]
+        pipe.delete(*players, *teams)
         pipe.execute()
         self.redis.delete(game_id)

@@ -4,8 +4,8 @@ import { render, renderHook } from 'vitest-browser-react';
 import { initialize } from 'google-maps-vitest-mocks';
 import LocationSelectMap from '@/components/LocationSelectMap/LocationSelectMap';
 import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
-import type { MapLocation } from '@/types/MapLocation';
-import type { GuessSubmitApiResponse } from '@/types/GuessSubmitApiResponse';
+import type { MapLocation } from '@/interfaces/MapLocation';
+import type { GuessSubmitApiResponse } from '@/interfaces/GuessSubmitApiResponse';
 
 beforeEach(() => {
     initialize()

@@ -1,13 +1,18 @@
 import getRandomLocation from "@/api/getRandomLocation/getRandomLocation";
 import queryClient from "@/api/queryClient";
 import submitGuess from "@/api/submitGuess/submitGuess";
+import Distance from "@/components/Distance/Distance";
 import GameUI from "@/components/GameUI/GameUI.tsx";
+import GuessMarker from "@/components/GuessMarker/GuessMarker";
 import LocationSelectMap from "@/components/LocationSelectMap/LocationSelectMap";
 import StreetView from "@/components/StreetView/StreetView.tsx";
+import TargetMarker from "@/components/TargetMarker/TargetMarker";
 import { useGameContext } from "@/context/GameContext";
-import type { MapLocation } from "@/types/MapLocation";
-import type { StreetViewLocationFromApi } from "@/types/StreetViewLocationFromApi";
+import type { MapLocation } from "@/interfaces/MapLocation";
+import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { RiPinDistanceFill } from "react-icons/ri";
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -17,7 +22,21 @@ function SinglePlayer() {
         retry: false,
         refetchOnWindowFocus: false,
     });
-    const { guessLocation, map, setGuessSubmitResponse, setGuessLocation } = useGameContext();
+    const { setIsSubmitted, guessLocation, map, guessSubmitResponse, setGuessSubmitResponse, setGuessLocation } = useGameContext();
+
+    const initialPanorama = useMemo(() => {
+        if (!location) return;
+        return {
+            center: { lat: location.lat, lng: location.lng },
+            pov: {
+                heading: location.heading,
+                pitch: 5,
+            },
+        }
+    }, [location]);
+
+
+    useEffect(() => setIsSubmitted(!!guessSubmitResponse?.guess), [guessSubmitResponse]);
 
     const submitGuessMutation = useMutation(
         {
@@ -41,6 +60,12 @@ function SinglePlayer() {
         }
     );
 
+    const submit = () => {
+        if (!guessLocation) return;
+        submitGuessMutation.mutate(guessLocation);
+        console.log('Guess submitted');
+    };
+
     const moveNext = () => {
         queryClient.invalidateQueries({
             queryKey: ['randomLocation'],
@@ -54,28 +79,35 @@ function SinglePlayer() {
 
     return (
         <div>
-            <StreetView
+            {initialPanorama && <StreetView
                 apiKey={apiKey}
                 zoom={14}
-                center={{ lat: location.lat, lng: location.lng }}
+                center={initialPanorama.center}
                 className="w-full h-full absolute z-10 top-0 right-0"
                 panoramaProps={{
                     options:
                     {
-                        pov:
-                        {
-                            heading: location.heading,
-                            pitch: 5
-                        },
+                        pov: initialPanorama.pov,
                         zoom: 0.5,
                         motionTracking: false,
                         addressControl: false,
                         fullscreenControl: false,
                     },
                 }}
-            />
-            <LocationSelectMap submitGuessMutation={submitGuessMutation} moveNext={moveNext} apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
-            hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1" />
+            />}
+            <LocationSelectMap isMoveNextBtnEnabled={true} submitGuess={submit} moveNext={moveNext} apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
+            hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1">
+                <Distance path={guessLocation && guessSubmitResponse?.target ? [
+                    guessLocation,
+                    guessSubmitResponse?.target
+                ] : []} visible={!!guessSubmitResponse?.target && !!guessLocation} />
+                {guessSubmitResponse && <div className="absolute rounded bg-neutral-800/70 text-neutral-50 p-2 bottom-2 left-1/2 -translate-x-1/2">
+                    <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>{Math.floor(guessSubmitResponse.distance / 1000)}km</span></div>
+                    <div>{guessSubmitResponse.score} points</div>
+                </div>}
+                {guessLocation && <GuessMarker position={guessLocation} />}
+                {guessSubmitResponse && <TargetMarker position={guessSubmitResponse.target} />}
+            </LocationSelectMap>
             <GameUI />
         </div>
     );

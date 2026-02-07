@@ -1,16 +1,16 @@
-from app.core import GameQueueRepository, validate_player_count
-from flask_socketio import Namespace, emit, join_room, leave_room
+from app.core import validate_player_count
+from flask_socketio import Namespace, emit, join_room, leave_room, close_room, rooms
 from flask_login import current_user
 from .util import authenticated_only
 from flask import session
-from app import game_queue
+from app import game_queue, game_room
 import json
 
 class QueueNamespace(Namespace):
     @authenticated_only
     def on_join(self, data):
-        if 'game_key' in session:
-            return
+        # if 'game_key' in session:
+        #     return
         if not 'player_count' in data:
             return
         try:
@@ -25,18 +25,20 @@ class QueueNamespace(Namespace):
         queue = game_queue.get_queue(player_count)
         if game_key:
             session['game_key'] = game_key
-            return emit('queue_joined', {
-                'game': game_key,
-                'queue': json.dumps(queue)
-            }, to=queue_key)
+            session.pop('queue')
+            emit('game_started', {
+                'game_key': game_key
+            }, to=queue_key, broadcast=True)
+            return close_room(queue_key)
+        
         emit('queue_joined', {
             'queue': json.dumps(queue)
-        }, to=queue_key)
+        }, to=queue_key, broadcast=True)
     
     @authenticated_only
     def on_leave(self):
-        if 'game_key' in session:
-            return
+        # if 'game_key' in session:
+        #     return
         if not game_queue.is_player_in_queue(current_user.id):
             return
         if not 'queue' in session:
@@ -46,5 +48,5 @@ class QueueNamespace(Namespace):
         queue = game_queue.get_queue(key)
         emit('queue_left', {
             'queue': json.dumps(queue)
-        }, to=key)
+        }, to=key, broadcast=True)
         leave_room(key)
