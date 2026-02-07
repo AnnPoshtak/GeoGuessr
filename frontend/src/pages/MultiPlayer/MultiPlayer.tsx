@@ -23,7 +23,7 @@ function Multiplayer() {
     const [roundData, setRoundData] = useState<RoundData | null>(null);
     const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
 
-    const { guessLocation, map, setGuessLocation } = useGameContext();
+    const { guessLocation, map, setGuessLocation, setIsSubmitted } = useGameContext();
 
     const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
@@ -108,6 +108,7 @@ function Multiplayer() {
             gameQueue.off('game_joined');
         };
     }, []);
+
     const join = () => {
         gameQueue.emit('join', {
             player_count: 2
@@ -124,6 +125,7 @@ function Multiplayer() {
     const submit = () => {
         if (!guessLocation) return;
         submitGuess(guessLocation);
+        setIsSubmitted(true);
     };
 
     return <>

@@ -10,6 +10,7 @@ class GameNamespace(Namespace):
         if not 'game_key' in session:
             return
         game_key = session['game_key']
+        session['guess_submitted'] = False
         return {
             'game': game_room.get_game(game_key)
         }
@@ -27,10 +28,13 @@ class GameNamespace(Namespace):
     def on_submit(self, data):
         if not 'game_key' in session:
             return
+        if session.get('guess_submitted'):
+            return
         game_key = session['game_key']
         game = game_room.get_game(game_key)
         guess = data['guess']
         game_room.submit_guess(game_key, current_user.id, guess)
+        session['guess_submitted'] = True
 
         if game_room.all_players_submitted(game_key):
             target = json.loads(game['location'])
