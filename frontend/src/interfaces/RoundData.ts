@@ -1,9 +1,7 @@
 import type { MapLocation } from "./MapLocation";
+import type { NewRoundTeam } from "./NewRoundTeam";
 
 export interface RoundData {
-    player_data: Record<number, {
-        guess: MapLocation,
-        health: number,
-    }>;
+    teams: NewRoundTeam[],
     target: MapLocation;
 };

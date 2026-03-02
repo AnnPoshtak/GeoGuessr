@@ -10,7 +10,7 @@ class GameRoomRepository(RedisRepository):
     A class used to interact with redis to create game rooms.
     It only handles setting/getting data from redis.
     GameRoomRepository can be created when at least two players are ready to start a game.
-    It stores current round, location, player team and health.
+    It stores current round, location and players.
     Scores and damage calculation have to be done externally.
     '''
     def __init__(self, redis: Redis):
@@ -48,18 +48,29 @@ class GameRoomRepository(RedisRepository):
         for p in players:
             pl_dict = {
                 'id': p['id'],
-                'health': STARTING_HEALTH,
                 'guess': json.dumps(None),
                 'team': p['team']
             }
+            team_key = f"{game_key}:teams:{p['team']}"
             if not p['team'] in game_mapping['teams']:
                 game_mapping['teams'].append(p['team'])
             game_mapping['player_ids'].append(p['id'])
             player_key = f'{game_key}:players:{p["id"]}'
-            team_key = f"{game_key}:team:{p['team']}"
-            pipe.sadd(team_key, p['id'])
+            t_players = self.redis.hget(team_key, 'players')
+            if t_players:
+                t_players = json.loads(t_players)
+            else:
+                t_players = []
+            t_players.append(p['id'])
+            t_health = STARTING_HEALTH // len(t_players)
+            pipe.hset(team_key, 'players', json.dumps(t_players))
+            pipe.hset(team_key, 'name', p['team'])
+            pipe.hset(team_key, 'health', t_health)
+            pipe.hset(team_key, 'score', 0)
+            pipe.hset(team_key, 'distance', 0)
             pipe.hset(player_key, mapping=pl_dict)
             pipe.expire(player_key, EXPIRY_TIME)
+            pipe.expire(team_key, EXPIRY_TIME)
 
         game_mapping['player_ids'] = json.dumps(game_mapping['player_ids'])
         game_mapping['teams'] = json.dumps(game_mapping['teams'])
@@ -74,17 +85,15 @@ class GameRoomRepository(RedisRepository):
     def get_player(self, game_id: str, player_id: int) -> dict:
         return self.redis.hgetall(f'{game_id}:players:{player_id}')
     
-    def get_players_by_teams(self, game_id: str) -> dict[str, list]:
+    def get_team(self, game_id: str, team_name: str) -> dict:
+        return self.redis.hgetall(f'{game_id}:teams:{team_name}')
+    
+    def get_teams(self, game_id: str) -> dict[str, list]:
         game = self.get_game(game_id)
-        teams = {
-            t: [] for t in json.loads(game['teams'])
-        } 
-        for p in self.get_player_ids(game_id):
-            player = self.get_player(game_id, p)
-            teams[player['team']].append(p)
-
+        teams = []
+        for t in json.loads(game['teams']):
+            teams.append(self.get_team(game_id, t))
         return teams
-        
     
     def all_players_submitted(self, game_id: str) -> bool:
         players = self.get_player_ids(game_id)
@@ -125,23 +134,26 @@ class GameRoomRepository(RedisRepository):
             EXPIRY_TIME = expiry_time or current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
         player_ids = self.get_player_ids(game_id)
         pipe = self.redis.pipeline()
+        teams = json.loads(self.get_game(game_id)['teams'])
         for p in player_ids:
             pipe.expire(f'{game_id}:players:{p}', EXPIRY_TIME)
-        pipe.expire(game_id, time=EXPIRY_TIME)
+        for t in teams:
+            pipe.expire(t, EXPIRY_TIME)
+        pipe.expire(game_id, EXPIRY_TIME)
         pipe.execute()
     
-    def set_player_health(self, game_id: str, player_id: int, health: int) -> None:
+    def set_team_health(self, game_id: str, team_name: str, health: int) -> None:
         '''
-        Sets health for player with id `player_id`
+        Sets health for team with id `team_name`
         
         :param game_id: redis game key
         :type game_id: str
-        :param player_id: player's primary key from db
-        :type player_id: int
+        :param team_name: team name
+        :type team_name: str
         :param health: A new health amount
         :type health: int
         '''
-        self.redis.hset(f'{game_id}:players:{player_id}', 'health', health)
+        self.redis.hset(f'{game_id}:teams:{team_name}', 'health', health)
         self.update_game_expiry(game_id)
     
     def move_next_round(self, game_id: str) -> int:
@@ -176,7 +188,7 @@ class GameRoomRepository(RedisRepository):
         pipe = self.redis.pipeline()
         game = self.get_game(game_id)
         players = [f'{game_id}:players:{p}' for p in player_ids]
-        teams = [f'{game_id}:team:{t}' for t in json.loads(game['teams'])]
+        teams = [f'{game_id}:teams:{t}' for t in json.loads(game['teams'])]
         pipe.delete(*players, *teams)
+        pipe.delete(game_id)
         pipe.execute()
-        self.redis.delete(game_id)

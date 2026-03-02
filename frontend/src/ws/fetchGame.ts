@@ -2,12 +2,12 @@ import type { GameRoom } from "@/interfaces/GameRoom";
 import { gameRoom } from "./wsClient";
 
 const fetchGame = () => {
-    return new Promise<GameRoom>((resolve, reject) => gameRoom.emit('fetch_game', (data: Record<any, any>) => {
+    return new Promise<GameRoom>((resolve, reject) => gameRoom.emit('fetch_game', (data: Record<'game', GameRoom>) => {
         if (data) {
             const game: GameRoom = {
-                location: JSON.parse(data['game']['location']),
-                round: JSON.parse(data['game']['round']),
-                player_ids: JSON.parse(data['game']['player_ids']),
+                location: data.game.location,
+                round: data.game.round,
+                teams: data.game.teams,
             }
             resolve(game);
         } else {

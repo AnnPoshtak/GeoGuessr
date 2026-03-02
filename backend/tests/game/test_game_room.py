@@ -53,15 +53,14 @@ def test_game_create_no_unique_teams():
     with pytest.raises(ValueError):
         game_room.create_game(players)
 
-def test_set_player_health(test_game_room, app):
+def test_set_team_health(test_game_room, app):
     game_id = f"gameroom:{test_game_room['id']}"
-    players = game_room.get_player_ids(game_id)
-    p1 = app_redis.hgetall(f"{game_id}:players:{players[0]}")
+    h = app_redis.hget(f"{game_id}:teams:red", 'health')
     with app.app_context():
-        assert int(p1['health']) == app.config['STARTING_PLAYER_HEALTH']
-    game_room.set_player_health(game_id, p1['id'], 2000)
-    p1_health = app_redis.hget(f"{game_id}:players:{players[0]}", 'health')
-    assert int(p1_health) == 2000
+        assert int(h) == app.config['STARTING_PLAYER_HEALTH']
+    game_room.set_team_health(game_id, 'red', 2000)
+    h = app_redis.hget(f"{game_id}:teams:red", 'health')
+    assert int(h) == 2000
 
 def test_move_next_round(test_game_room, mocker):
     game_id = f"gameroom:{test_game_room['id']}"

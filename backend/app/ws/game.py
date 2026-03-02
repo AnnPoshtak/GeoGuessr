@@ -11,8 +11,12 @@ class GameNamespace(Namespace):
             return
         game_key = session['game_key']
         session['guess_submitted'] = False
+        game = game_room.get_game(game_key)
+        game['teams'] = game_room.get_teams(game_key)
+        game['round'] = int(game['round'])
+        game['location'] = json.loads(game['location'])
         return {
-            'game': game_room.get_game(game_key)
+            'game': game
         }
     
     def on_join(self, data):
@@ -41,21 +45,20 @@ class GameNamespace(Namespace):
             team_scores = []
             winning_team = None
             # TODO: it would be nice to imporve this algorithm
-            player_data = {}
-            teams = game_room.get_players_by_teams(game_key)
-            for team, players in teams.items():
+            teams = game_room.get_teams(game_key)
+            for team in teams:
                 t_score = []
-                for p in players:
-                    player = game_room.get_player(game_key, int(p))
-                    distance = calculate_line_distance(target, json.loads(player['guess']))
+                team['players'] = json.loads(team['players'])
+                for i, p in enumerate(team['players']):
+                    player = game_room.get_player(game_key, p)
+                    player['guess'] = json.loads(player['guess'])
+                    player['id'] = json.loads(player['id'])
+                    distance = calculate_line_distance(target, player['guess'])
                     score = calculate_score(distance)
                     t_score.append(score)
-                    p_data = player_data.setdefault(p, {})
-                    p_data['guess'] = json.loads(player['guess'])
-                    p_data['distance'] = distance
-                    p_data['score'] = score
-
-                    player_data[p] = p_data
+                    team['distance'] = distance
+                    team['score'] = score
+                    team['players'][i] = player
 
                 avg_score = sum(t_score) // len(t_score)
                 if avg_score > max(team_scores, default=0):
@@ -64,19 +67,16 @@ class GameNamespace(Namespace):
                 team_scores.append(avg_score)
 
             best_score = max(team_scores)
-
             for i, t in enumerate(teams):
                 score_diff = best_score - team_scores[i]
-                for p in teams[t]:
-                    health = int(game_room.get_player(game_key, int(p))['health'])
-                    if t != winning_team:
-                        health -= score_diff
-                        game_room.set_player_health(game_key, p, health)
-                    player_data[p]['health'] = health
-            
+                health = int(t['health'])
+                if t['name'] != winning_team:
+                    health -= score_diff * int(game['round']) // 2
+                    t['health'] = health
+                    game_room.set_team_health(game_key, t['name'], health)
             game_room.move_next_round(game_key)
             return emit('new_round', {
                 'target': target,
-                'player_data': player_data,
+                'teams': teams,
             }, to=game_key, broadcast=True)
         

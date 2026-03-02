@@ -15,6 +15,7 @@ import type { RoundData } from '@/interfaces/RoundData';
 import { RiPinDistanceFill } from 'react-icons/ri';
 import TargetMarker from '@/components/TargetMarker/TargetMarker';
 import { type MapLocation } from '@/interfaces/MapLocation';
+import type { Team } from '@/interfaces/Team';
 
 function Multiplayer() {
     const [players, setPlayers] = useState([]);
@@ -22,6 +23,7 @@ function Multiplayer() {
     const [isJoined, setIsJoined] = useState<boolean>(false);
     const [roundData, setRoundData] = useState<RoundData | null>(null);
     const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]);
 
     const { guessLocation, map, setGuessLocation, setIsSubmitted } = useGameContext();
 
@@ -30,9 +32,9 @@ function Multiplayer() {
     const { data: game } = useQuery<GameRoom | null>({
         queryKey: ['game', gameKey],
         queryFn: async () => {
-            console.log('Fetching')
             console.log('Fetching game...');
             const data = await fetchGame();
+            setTeams(data.teams);
             if (viewRef.current) {
                 viewRef.current.setPov({
                     heading: data.location.heading,
@@ -55,10 +57,16 @@ function Multiplayer() {
             console.log('New Round!');
             if (!map) return;
             const bounds = new google.maps.LatLngBounds();
-            for (let g of Object.values(data.player_data)) {
-                setAllGuesses(p => [...p, g.guess]);
-                bounds.extend(g.guess);
-            }
+            console.log(data.teams)
+            setTeams(data.teams);
+            data.teams.forEach((t) => {
+                for (let pl of t.players) {
+                    // @ts-ignore
+                    setAllGuesses(p => [...p, pl.guess]);
+                    bounds.extend(pl.guess);
+                }
+            });
+
             bounds.extend(data.target);
 
             setRoundData(data);
@@ -132,6 +140,13 @@ function Multiplayer() {
     return <>
         {game ? <>
             <div>
+                <div className="absolute pointer-events-none z-40 top-0 h-1/12 w-full">
+                    <div className="relative justify-between text-neutral-50 flex w-full h-full *:pointer-events-auto">
+                        {teams.map((t) => <div className='text-3xl bg-neutral-600/50 p-2'>
+                            {t.health}
+                        </div>)}
+                    </div>
+                </div>
                 <StreetView
                     apiKey={apiKey}
                     zoom={14}
