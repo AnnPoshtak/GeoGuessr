@@ -25,7 +25,7 @@ class GameNamespace(Namespace):
             'game': game
         }
     
-    def on_join(self, data):
+    def on_join(self, data: dict = {}):
         if not 'game_key' in data or not isinstance(data['game_key'], str):
             return
         game_key = data['game_key']
@@ -35,7 +35,7 @@ class GameNamespace(Namespace):
             'game_key': game_key
         }, to=game_key)
 
-    def on_submit(self, data):
+    def on_submit(self, data: dict = {}):
         if not 'game_key' in session:
             return
         if session.get('guess_submitted'):

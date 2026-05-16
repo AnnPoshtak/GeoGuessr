@@ -8,9 +8,11 @@ import json
 
 class QueueNamespace(Namespace):
     @authenticated_only
-    def on_join(self, data):
-        # if 'game_key' in session:
-        #     return
+    def on_join(self, data: dict = {}):
+        if 'game_key' in session:
+            return
+        if not data: 
+            return
         if not 'player_count' in data:
             return
         if game_queue.is_player_in_queue(current_user.id):
