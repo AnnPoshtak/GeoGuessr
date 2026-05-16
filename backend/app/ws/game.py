@@ -1,11 +1,17 @@
 from flask_socketio import Namespace, emit, join_room
-from flask import session
+from flask import session, current_app
 from app import game_room
 from app.core.util import calculate_line_distance, calculate_score
 import json
 from flask_login import current_user
 
 class GameNamespace(Namespace):
+    def _emit_new_round(self, target: dict, teams: list, game_key: str) -> None:
+        emit('new_round', {
+            'target': target,
+            'teams': teams,
+        }, to=game_key, broadcast=True)
+
     def on_fetch_game(self):
         if not 'game_key' in session:
             return
@@ -71,12 +77,17 @@ class GameNamespace(Namespace):
                 score_diff = best_score - team_scores[i]
                 health = int(t['health'])
                 if t['name'] != winning_team:
-                    health -= score_diff * int(game['round']) // 2
+                    health -= round(score_diff * (int(game['round']) * current_app.config['ROUND_HEALTH_MULTIPLIER']))
+                    health = max(0, health)
                     t['health'] = health
                     game_room.set_team_health(game_key, t['name'], health)
+                    if health <= 0:
+                        emit('game_end', {
+                            'winner': game_room.get_team(game_key, winning_team),
+                            'target': target,
+                            'teams': teams,
+                        }, to=game_key, broadcast=True)
+                        return game_room.end_game(game_key)
             game_room.move_next_round(game_key)
-            return emit('new_round', {
-                'target': target,
-                'teams': teams,
-            }, to=game_key, broadcast=True)
+            self._emit_new_round(target, teams, game_key)
         

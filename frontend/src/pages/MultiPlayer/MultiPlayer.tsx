@@ -16,14 +16,35 @@ import { RiPinDistanceFill } from 'react-icons/ri';
 import TargetMarker from '@/components/TargetMarker/TargetMarker';
 import { type MapLocation } from '@/interfaces/MapLocation';
 import type { Team } from '@/interfaces/Team';
+import { useNavigate } from 'react-router-dom';
+import config from '@/config';
+
+interface GameState {
+    isEnded: boolean;
+    winner: Record<string, string> | null;
+    roundData: RoundData | null;
+};
 
 function Multiplayer() {
     const [players, setPlayers] = useState([]);
     const [gameKey, setGameKey] = useState<string | null>(null);
     const [isJoined, setIsJoined] = useState<boolean>(false);
-    const [roundData, setRoundData] = useState<RoundData | null>(null);
     const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
+    const navigate = useNavigate();
+    const [gameState, setGameState] = useState<GameState>({
+        isEnded: false,
+        winner: null,
+        roundData: null,
+    });
+    const setRoundData = (data: typeof gameState.roundData) => {
+        setGameState(p => {
+            return {
+                ...p,
+                roundData: data
+            }
+        }
+    )};
 
     const { guessLocation, map, setGuessLocation, setIsSubmitted } = useGameContext();
 
@@ -50,41 +71,59 @@ function Multiplayer() {
         enabled: isJoined,
         staleTime: Infinity
     });
+    const leaveGame = () => {
+        navigate('/');
+        gameRoom.disconnect();
+    }
+    const handleNewRound = (data: RoundData) => {
+        if (!map) return;
+        const bounds = new google.maps.LatLngBounds();
+        setTeams(data.teams);
+        data.teams.forEach((t) => {
+            for (let pl of t.players) {
+                // @ts-ignore
+                setAllGuesses(p => [...p, pl.guess]);
+                bounds.extend(pl.guess);
+            }
+        });
+
+        bounds.extend(data.target);
+
+        setRoundData(data);
+        map.fitBounds(bounds);
+        setTimeout(async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ['game', gameKey],
+            });
+            setGuessLocation(null);
+            setRoundData(null);
+            setIsSubmitted(false);
+            setAllGuesses([]);
+        }, config.roundAutoMoveCooldown);
+    }
 
     useEffect(() => {
         if (!isJoined || !gameKey) return;
         gameRoom.on('new_round', async (data: RoundData) => {
             console.log('New Round!');
-            if (!map) return;
-            const bounds = new google.maps.LatLngBounds();
-            console.log(data.teams)
-            setTeams(data.teams);
-            data.teams.forEach((t) => {
-                for (let pl of t.players) {
-                    // @ts-ignore
-                    setAllGuesses(p => [...p, pl.guess]);
-                    bounds.extend(pl.guess);
+            handleNewRound(data);
+        });
+
+        gameRoom.on('game_end', (data) => {
+            handleNewRound(data);
+            setGameState(p => {
+                return {
+                    ...p,
+                    isEnded: true,
+                    winner: data.winner
                 }
             });
-
-            bounds.extend(data.target);
-
-            setRoundData(data);
-            map.fitBounds(bounds);
-            setTimeout(async () => {
-                await queryClient.invalidateQueries({
-                    queryKey: ['game', gameKey],
-                });
-                setGuessLocation(null);
-                setRoundData(null);
-                setIsSubmitted(false);
-                setAllGuesses([]);
-            }, 6000);
-
+            setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
         });
 
         return () => {
             gameRoom.off('new_round');
+            gameRoom.off('game_end');
         }
     }, [isJoined, gameKey, map]);
 
@@ -172,18 +211,21 @@ function Multiplayer() {
                         },
                     }}
                 />
+                
+                {gameState.isEnded ? <button className="absolute z-20 sm:bottom-10 sm:right-16 rounded sm:w-1/2 md:w-1/4 bg-red-500 hover:bg-red-600 cursor-pointer p-2 text-neutral-50"
+                onClick={leaveGame}>Next!</button>: 
                 <LocationSelectMap submitGuess={submit} moveNext={() => { }} apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
             hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1">
-                    {roundData ? <>
-                        <TargetMarker position={roundData.target} />
+                    {gameState.roundData ? <>
+                        <TargetMarker position={gameState.roundData.target} />
                         {allGuesses.map(g => <div key={g.lat + g.lng}>
-                            <Distance path={g ? [
+                            <Distance path={g && gameState.roundData ? [
                                 g,
-                                roundData.target
-                            ] : []} visible={!!roundData} />
+                                gameState.roundData.target
+                            ] : []} visible={!!gameState.roundData} />
 
                             <GuessMarker position={g} />
-                            {roundData &&
+                            {gameState.roundData &&
                                 <div className="absolute rounded bg-neutral-800/70 text-neutral-50
                                 p-2 bottom-2 left-1/2 -translate-x-1/2">
                                     <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>x km</span></div>
@@ -196,6 +238,8 @@ function Multiplayer() {
                     </> : guessLocation && <GuessMarker position={guessLocation} />
                     }
                 </LocationSelectMap>
+                }
+                
                 <GameUI />
             </div>
         </> : <div>
