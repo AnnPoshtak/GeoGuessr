@@ -32,7 +32,6 @@ function LocationSelectMap({ apiKey, className, moveNext, submitGuess, isMoveNex
             lng: e.latLng.lng()
         });
     };
-    // Put it into useState bacause otherwise center would reset after click
     const [mapLocation] = useState<MapLocation>({
         lat: 0,
         lng: 0,
@@ -45,11 +44,12 @@ function LocationSelectMap({ apiKey, className, moveNext, submitGuess, isMoveNex
             {children}
         </GoogleMap>
         {isSubmitted && isMoveNextBtnEnabled ?
-            <button className="w-full rounded bg-red-500 hover:bg-red-600 cursor-pointer p-2 text-neutral-50"
+            <button className="mt-3 w-full rounded-xl bg-neutral-100 hover:bg-white text-neutral-950 font-semibold p-3 cursor-pointer transition-colors duration-200"
                 onClick={moveNext}>Next!</button> :
-            <button className="w-full rounded disabled:hover:bg-gray-500 disabled:bg-gray-500 disabled:cursor-not-allowed
-         bg-red-500 hover:bg-red-600 cursor-pointer p-2 text-neutral-50"
-                disabled={isSubmitted} onClick={submitGuess}>Submit guess!</button>}
+            <button className="mt-3 w-full rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-medium p-3 transition-colors duration-200 cursor-pointer
+        disabled:bg-neutral-900 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                disabled={isSubmitted} onClick={submitGuess}>Submit guess!</button>
+        }
     </div>;
 }
 
