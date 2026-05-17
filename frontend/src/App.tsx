@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import SinglePlayer from "./pages/SinglePlayer/SinglePlayer.tsx";
 import OAuthCallback from "./pages/OAuthCallback/OAuthCallback.tsx";
+import Home from "./pages/Home/Home.tsx"
 import { Toaster } from "sonner";
 import { GameContextProvider } from "./context/GameContext.tsx";
 import Multiplayer from "./pages/MultiPlayer/MultiPlayer.tsx";
@@ -19,7 +20,8 @@ function App() {
             }
                 duration={3000} position='bottom-right' richColors closeButton expand={true} />
             <Routes>
-                <Route path="/" element={
+                <Route path="/" element={<Home/>} />
+                <Route path="/single-game" element={
                     <GameContextProvider>
                         <SinglePlayer />
                     </GameContextProvider>
