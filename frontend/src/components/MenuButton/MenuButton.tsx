@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-// 1. КОМПОНЕНТ МОДАЛКИ (Гнучкий, міняй тексти прямо в пропсах)
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -50,14 +49,12 @@ function Modal({ isOpen, onClose, onConfirm, title, description, confirmText = "
     );
 }
 
-// 2. ГОЛОВНИЙ КОМПОНЕНТ МЕНЮ
 function MenuButton() {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [isSoundOn, setIsSoundOn] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false); // Стан модалки
 
-    // Обробка глобального Esc для меню
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape" && !isModalOpen) {
@@ -110,13 +107,12 @@ function MenuButton() {
                 </div>
             )}
 
-            {/* ВСТАВЛЕНА МОДАЛКА ВИХОДУ */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={() => {
                     setIsModalOpen(false);
-                    navigate("/"); // Твій оригінальний перехід
+                    navigate("/");
                 }}
                 title="Вийти з гри?"
                 description="Ви впевнені, що хочете повернутися на головну сторінку? Поточний прогрес гри буде втрачено."
