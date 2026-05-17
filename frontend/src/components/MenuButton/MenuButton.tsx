@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGameContext } from "@/context/GameContext";
 
 interface ModalProps {
     isOpen: boolean;
@@ -52,8 +53,9 @@ function Modal({ isOpen, onClose, onConfirm, title, description, confirmText = "
 function MenuButton() {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
-    const [isSoundOn, setIsSoundOn] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false); // Стан модалки
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { isSoundOn, setIsSoundOn } = useGameContext();
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -98,7 +100,7 @@ function MenuButton() {
                     <div className="h-[1px] bg-neutral-800 my-1 w-[90%] mx-auto" />
 
                     <button 
-                        onClick={() => setIsModalOpen(true)} // Просто відкриваємо модалку підтвердження
+                        onClick={() => setIsModalOpen(true)}
                         className="w-full text-left rounded-lg hover:bg-red-950/30 text-neutral-400 hover:text-red-400 font-medium p-3 cursor-pointer transition-colors duration-200"
                     >
                         Головна сторінка

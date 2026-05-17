@@ -9,9 +9,11 @@ interface GameContextProps {
     setGuessSubmitResponse: Dispatch<SetStateAction<GuessSubmitApiResponse | null>>;
     map: google.maps.Map | null;
     setMap: Dispatch<SetStateAction<google.maps.Map | null>>;
-    isSubmitted: boolean,
+    isSubmitted: boolean;
     setIsSubmitted: Dispatch<SetStateAction<boolean>>;
-};
+    isSoundOn: boolean;
+    setIsSoundOn: Dispatch<SetStateAction<boolean>>;
+}
 
 export const GameContext = createContext<GameContextProps>({
     guessLocation: null,
@@ -22,6 +24,8 @@ export const GameContext = createContext<GameContextProps>({
     setMap: () => { },
     isSubmitted: false,
     setIsSubmitted: () => { },
+    isSoundOn: true,
+    setIsSoundOn: () => { },
 });
 
 export const GameContextProvider = ({ children }: { children: ReactNode }) => {
@@ -29,11 +33,13 @@ export const GameContextProvider = ({ children }: { children: ReactNode }) => {
     const [guessSubmitResponse, setGuessSubmitResponse] = useState<GuessSubmitApiResponse | null>(null);
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSoundOn, setIsSoundOn] = useState(true);
 
     return <GameContext.Provider value={{
         guessLocation, setGuessLocation,
         guessSubmitResponse, setGuessSubmitResponse,
-        map, setMap, isSubmitted, setIsSubmitted
+        map, setMap, isSubmitted, setIsSubmitted,
+        isSoundOn, setIsSoundOn
     }}>
         {children}
     </GameContext.Provider>
