@@ -48,7 +48,7 @@ def create_app(config=DevelopmentConfig) -> Flask:
     server_session.init_app(app)
     # ! Remove logger=True in production
     socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], 
-                      logger=True, async_mode='threading',
+                      logger=True, async_mode=os.environ.get('SOCKETIO_ASYNC_MODE', 'threading'),
                       manage_session=False)
 
     for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
