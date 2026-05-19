@@ -1,21 +1,27 @@
-from flask_socketio import Namespace, emit, join_room
+from flask_socketio import Namespace, emit, send
 from flask import session, current_app
 from app import game_room
 from app.core.util import calculate_line_distance, calculate_score
+from .util import join_game, authenticated_only, join_game_currently_in
 import json
 from flask_login import current_user
 
 class GameNamespace(Namespace):
+    @authenticated_only
+    def on_connect(self):
+        join_game_currently_in()
+
     def _emit_new_round(self, target: dict, teams: list, game_key: str) -> None:
         emit('new_round', {
             'target': target,
             'teams': teams,
         }, to=game_key, broadcast=True)
 
+    @authenticated_only
     def on_fetch_game(self):
-        if not 'game_key' in session:
-            return
-        game_key = session['game_key']
+        game_key = game_room.get_current_game(current_user.id)
+        if not game_key:
+            return send('You have to be part of the ongoing game')
         session['guess_submitted'] = False
         game = game_room.get_game(game_key)
         game['teams'] = game_room.get_teams(game_key)
@@ -24,23 +30,22 @@ class GameNamespace(Namespace):
         return {
             'game': game
         }
-    
+
+    @authenticated_only
     def on_join(self, data: dict = {}):
         if not 'game_key' in data or not isinstance(data['game_key'], str):
-            return
+            return send('Please, select a game you wish to join')
         game_key = data['game_key']
-        join_room(game_key)
-        session['game_key'] = game_key
-        emit('game_joined', {
-            'game_key': game_key
-        }, to=game_key)
+        join_game(current_user.id, game_key)
 
+    @authenticated_only
     def on_submit(self, data: dict = {}):
-        if not 'game_key' in session:
-            return
+        game_key = game_room.get_current_game(current_user.id)
+        if not game_key:
+            return send('You have to be part of the ongoing game')
+        # TODO: store guess_submitted in redis
         if session.get('guess_submitted'):
-            return
-        game_key = session['game_key']
+            return send('You have already submitted the guess')
         game = game_room.get_game(game_key)
         guess = data['guess']
         game_room.submit_guess(game_key, current_user.id, guess)

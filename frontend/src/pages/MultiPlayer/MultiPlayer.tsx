@@ -18,11 +18,17 @@ import { type MapLocation } from '@/interfaces/MapLocation';
 import type { Team } from '@/interfaces/Team';
 import { useNavigate } from 'react-router-dom';
 import config from '@/config';
+import { toast } from 'sonner';
 
 interface GameState {
     isEnded: boolean;
     winner: Record<string, string> | null;
     roundData: RoundData | null;
+};
+
+interface EndGameData extends RoundData {
+    winner: Record<string, string>;
+    roundData: RoundData;
 };
 
 function Multiplayer() {
@@ -100,16 +106,15 @@ function Multiplayer() {
             setIsSubmitted(false);
             setAllGuesses([]);
         }, config.roundAutoMoveCooldown);
+    };
+    const handleJoinGame = () => {
+        setIsJoined(true);
     }
-
-    useEffect(() => {
-        if (!isJoined || !gameKey) return;
-        gameRoom.on('new_round', async (data: RoundData) => {
+    const newRoundCallback = async (data: RoundData) => {
             console.log('New Round!');
             handleNewRound(data);
-        });
-
-        gameRoom.on('game_end', (data) => {
+        }
+    const gameEndCallback = (data: EndGameData) => {
             handleNewRound(data);
             setGameState(p => {
                 return {
@@ -119,15 +124,18 @@ function Multiplayer() {
                 }
             });
             setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
-        });
-
-        return () => {
-            gameRoom.off('new_round');
-            gameRoom.off('game_end');
         }
-    }, [isJoined, gameKey, map]);
-
+    const messageCallback = (message: string) => {
+        toast.error(message);
+    };
     useEffect(() => {
+        gameRoom.on('message', messageCallback);
+        gameQueue.on('message', messageCallback);
+        gameRoom.on('new_round', newRoundCallback);
+        gameQueue.on('new_round', newRoundCallback);
+
+        gameRoom.on('game_end', gameEndCallback);
+        gameQueue.on('game_end', gameEndCallback);
         gameQueue.on('queue_joined', (data) => {
             console.log('Joined queue');
             setPlayers(JSON.parse(data['queue']));
@@ -146,16 +154,33 @@ function Multiplayer() {
         });
 
         gameRoom.on('game_joined', () => {
-            setIsJoined(true);
+            gameQueue.disconnect();
+            handleJoinGame();
+            gameRoom.connect();
+        });
+
+        gameQueue.on('game_joined', () => {
+            gameQueue.disconnect();
+            handleJoinGame();
+            gameRoom.connect();
         });
 
         return () => {
-            gameQueue.off('queue_joined');
+            gameRoom.off('new_round');
+            gameRoom.off('game_end');
+            gameRoom.off('game_joined');
+            gameRoom.off('message');
+            
+            gameQueue.off('new_round');
+            gameQueue.off('game_end');
+            gameQueue.off('queue_joined');  
             gameQueue.off('queue_left');
             gameQueue.off('game_started');
             gameQueue.off('game_joined');
-        };
-    }, []);
+            gameQueue.off('message');
+        }
+    }, [isJoined, gameKey, map]);
+
 
     const join = () => {
         gameQueue.emit('join', {

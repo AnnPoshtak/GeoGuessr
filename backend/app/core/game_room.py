@@ -16,6 +16,12 @@ class GameRoomRepository(RedisRepository):
     def __init__(self, redis: Redis):
         super().__init__(redis=redis, key='gameroom')
 
+    def get_current_game(self, player_id: int) -> str | None:
+        return self.redis.get(player_id)
+    
+    def join_game(self, player_id: int, game_key: str) -> None:
+        self.redis.set(player_id, game_key)
+
     def create_game(self, players: list[dict]) -> str: 
         '''
         Creates a game inside redis. It stores current round, location and players participating in it
@@ -46,6 +52,7 @@ class GameRoomRepository(RedisRepository):
         }
         pipe = self.redis.pipeline()
         for p in players:
+            self.join_game(p['id'], game_id)
             pl_dict = {
                 'id': p['id'],
                 'guess': json.dumps(None),
@@ -188,7 +195,8 @@ class GameRoomRepository(RedisRepository):
         pipe = self.redis.pipeline()
         game = self.get_game(game_id)
         players = [f'{game_id}:players:{p}' for p in player_ids]
+        player_games = [p for p in player_ids]
         teams = [f'{game_id}:teams:{t}' for t in json.loads(game['teams'])]
-        pipe.delete(*players, *teams)
+        pipe.delete(*players, *teams, *player_games)
         pipe.delete(game_id)
         pipe.execute()
