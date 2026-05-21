@@ -10,16 +10,19 @@ interface QueueProps {
 
 const Queue = ({join, leave}: QueueProps) => {
     const [players, setPlayers] = useState([]);
+    const [inQueue, setInQueue] = useState(false);
     const {setGameKey} = useMultiplayerContext();
 
     useEffect(() => {
         gameQueue.on('queue_joined', (data) => {
             console.log('Joined queue');
             setPlayers(JSON.parse(data['queue']));
+            setInQueue(true);
         });
         gameQueue.on('queue_left', (data) => {
             console.log('Left queue');
             setPlayers(JSON.parse(data['queue']));
+            setInQueue(false);
         });
 
         gameQueue.on('game_started', (data) => {
@@ -38,10 +41,12 @@ const Queue = ({join, leave}: QueueProps) => {
         }
     })
     return <div>
-        <div>This is multiplayer page</div>
-        <div>{players}</div>
-        <button className='bg-green-600 rounded p-2' onClick={join}>Join!</button>
+        <div>Multiplayer lobby</div>
+        
+        {inQueue ? <>
+        <div>There are {players.length} players waiting for the game to start</div>
         <button className='bg-red-600 rounded p-2' onClick={leave}>Leave!</button>
+        </> : <button className='bg-green-600 rounded p-2' onClick={join}>Join!</button>}
     </div>;
 }
  
