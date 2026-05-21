@@ -79,7 +79,6 @@ function Multiplayer() {
     });
     const leaveGame = () => {
         navigate('/');
-        gameRoom.disconnect();
     }
     const handleNewRound = (data: RoundData) => {
         if (!map) return;
@@ -87,7 +86,6 @@ function Multiplayer() {
         setTeams(data.teams);
         data.teams.forEach((t) => {
             for (let pl of t.players) {
-                // @ts-ignore
                 setAllGuesses(p => [...p, pl.guess]);
                 bounds.extend(pl.guess);
             }
@@ -115,19 +113,26 @@ function Multiplayer() {
             handleNewRound(data);
         }
     const gameEndCallback = (data: EndGameData) => {
-            handleNewRound(data);
-            setGameState(p => {
-                return {
-                    ...p,
-                    isEnded: true,
-                    winner: data.winner
-                }
-            });
-            setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
-        }
+        handleNewRound(data);
+        setGameState(p => {
+            return {
+                ...p,
+                isEnded: true,
+                winner: data.winner
+            }
+        });
+    }
     const messageCallback = (message: string) => {
         toast.error(message);
     };
+    useEffect(() => {
+        if (!gameState.isEnded) return;
+        const timeout = setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
+        return () => {
+            clearTimeout(timeout);
+        }
+    }, [gameState, navigate]);
+
     useEffect(() => {
         gameRoom.on('message', messageCallback);
         gameQueue.on('message', messageCallback);
@@ -154,15 +159,11 @@ function Multiplayer() {
         });
 
         gameRoom.on('game_joined', () => {
-            gameQueue.disconnect();
             handleJoinGame();
-            gameRoom.connect();
         });
 
         gameQueue.on('game_joined', () => {
-            gameQueue.disconnect();
             handleJoinGame();
-            gameRoom.connect();
         });
 
         return () => {
