@@ -74,7 +74,7 @@ function Multiplayer() {
             };
             return data;
         },
-        enabled: isJoined,
+        enabled: isJoined && !gameState.isEnded,
         staleTime: Infinity
     });
     const leaveGame = () => {
