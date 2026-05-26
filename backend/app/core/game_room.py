@@ -20,7 +20,10 @@ class GameRoomRepository(RedisRepository):
         return self.redis.get(player_id)
     
     def join_game(self, player_id: int, game_key: str) -> None:
+        with current_app.app_context():
+            EXPIRY_TIME = current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
         self.redis.set(player_id, game_key)
+        self.redis.expire(player_id, EXPIRY_TIME)
 
     def create_game(self, players: list[dict]) -> str: 
         '''
@@ -144,6 +147,7 @@ class GameRoomRepository(RedisRepository):
         teams = json.loads(self.get_game(game_id)['teams'])
         for p in player_ids:
             pipe.expire(f'{game_id}:players:{p}', EXPIRY_TIME)
+            pipe.expire(p, EXPIRY_TIME)
         for t in teams:
             pipe.expire(t, EXPIRY_TIME)
         pipe.expire(game_id, EXPIRY_TIME)
