@@ -1,6 +1,7 @@
 import { useMultiplayerContext } from "@/context/MultiplayerContext";
 import { gameQueue, gameRoom } from "@/ws/wsClient";
 import { useEffect, useState, type MouseEventHandler } from "react";
+import { toast } from "sonner";
 
 interface QueueProps {
     players: number[];
@@ -13,7 +14,12 @@ const Queue = ({join, leave}: QueueProps) => {
     const [inQueue, setInQueue] = useState(false);
     const {setGameKey} = useMultiplayerContext();
 
+    const messageCallback = (message: string) => {
+        toast.error(message);
+    }; 
+
     useEffect(() => {
+        gameQueue.on('message', messageCallback);
         gameQueue.on('queue_joined', (data) => {
             console.log('Joined queue');
             setPlayers(JSON.parse(data['queue']));
