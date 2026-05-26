@@ -39,6 +39,7 @@ class BaseConfig():
     SCORE_CALCULATION_SCALE = 300_000 # Distance after which score starts to drop drammatically, in metres
     MIN_PLAYERS = 2
     GAMEROOM_EXPIRY_TIME = 86400 # 24 hours
+    # TODO: sync this config option with frontend
     STARTING_PLAYER_HEALTH = 200
     ROUND_HEALTH_MULTIPLIER = 0.5 # The damage equals to score_diff * round * this multiplier
     GAME_PLAYERCOUNT = (2, 4)

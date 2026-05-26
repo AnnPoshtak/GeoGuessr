@@ -5,6 +5,7 @@ from app.core.util import calculate_line_distance, calculate_score
 from .util import join_game, authenticated_only, join_game_currently_in
 import json
 from flask_login import current_user
+from app.models import UserModel
 
 class GameNamespace(Namespace):
     @authenticated_only
@@ -20,11 +21,24 @@ class GameNamespace(Namespace):
     @authenticated_only
     def on_fetch_game(self):
         game_key = game_room.get_current_game(current_user.id)
+        current_app.logger.info(game_key)
         if not game_key:
             return send('You have to be part of the ongoing game')
         session['guess_submitted'] = False
         game = game_room.get_game(game_key)
         game['teams'] = game_room.get_teams(game_key)
+        teams = []
+        for t in game['teams']:
+            players = []
+            for p in t['players']:
+                # TODO: use marshmallow for serialization
+                u = UserModel.query.get(p)
+                u = {
+                    'username': u.username,
+                }
+                players.append(u)
+            t['players'] = players
+            teams.append(t)
         game['round'] = int(game['round'])
         game['location'] = json.loads(game['location'])
         return {

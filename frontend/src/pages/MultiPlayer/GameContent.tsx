@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { RiPinDistanceFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import TeamBar from "./components/TeamBar";
 
 interface GameState {
     isEnded: boolean;
@@ -57,7 +58,6 @@ const GameContent = () => {
 
     useEffect(() => {
         gameRoom.on('message', messageCallback);
-        gameQueue.on('message', messageCallback);
         gameRoom.on('new_round', newRoundCallback);
         gameQueue.on('new_round', newRoundCallback);
 
@@ -162,9 +162,7 @@ const GameContent = () => {
     return <div>
                 <div className="absolute pointer-events-none z-40 top-0 h-1/12 w-full">
                     <div className="relative justify-between text-neutral-50 flex w-full h-full *:pointer-events-auto">
-                        {teams.map((t) => <div className='text-3xl bg-neutral-600/50 p-2'>
-                            {t.health}
-                        </div>)}
+                        {teams.map((t, index) => <TeamBar rtl={index % 2 !== 0} team={t} />)}
                     </div>
                 </div>
                 <StreetView

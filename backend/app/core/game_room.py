@@ -102,7 +102,12 @@ class GameRoomRepository(RedisRepository):
         game = self.get_game(game_id)
         teams = []
         for t in json.loads(game['teams']):
-            teams.append(self.get_team(game_id, t))
+            t = self.get_team(game_id, t)
+            t['players'] = json.loads(t['players'])
+            t['health'] = json.loads(t['health'])
+            t['score'] = json.loads(t['score'])
+            t['distance'] = json.loads(t['distance'])
+            teams.append(t)
         return teams
     
     def all_players_submitted(self, game_id: str) -> bool:
