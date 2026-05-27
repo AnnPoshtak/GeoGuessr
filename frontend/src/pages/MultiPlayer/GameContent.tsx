@@ -26,18 +26,18 @@ interface GameState {
     isEnded: boolean;
     winner: Record<string, string> | null;
     roundData: RoundData | null;
-};
+}
 
 interface EndGameData extends RoundData {
     winner: Record<string, string>;
     roundData: RoundData;
-};
+}
 
 const GameContent = () => {
     const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-    const {gameKey, isJoined} = useMultiplayerContext();
+    const { gameKey, isJoined } = useMultiplayerContext();
 
     const navigate = useNavigate();
     const [gameState, setGameState] = useState<GameState>({
@@ -51,7 +51,7 @@ const GameContent = () => {
         const timeout = setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
         return () => {
             clearTimeout(timeout);
-        }
+        };
     }, [gameState, navigate]);
 
     const { guessLocation, map, setGuessLocation, setIsSubmitted } = useGameContext();
@@ -71,17 +71,12 @@ const GameContent = () => {
             
             gameQueue.off('new_round');
             gameQueue.off('game_end');
-        }
+        };
     }, [isJoined, gameKey, map]);
 
     const setRoundData = (data: typeof gameState.roundData) => {
-        setGameState(p => {
-            return {
-                ...p,
-                roundData: data
-            }
-        }
-    )};
+        setGameState(p => ({ ...p, roundData: data }));
+    };
 
     const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
@@ -100,15 +95,17 @@ const GameContent = () => {
                     lat: data.location.lat,
                     lng: data.location.lng,
                 });
-            };
+            }
             return data;
         },
         enabled: isJoined && !gameState.isEnded,
         staleTime: Infinity
     });
+
     const leaveGame = () => {
         navigate('/');
-    }
+    };
+
     const handleNewRound = (data: RoundData) => {
         if (!map) return;
         const bounds = new google.maps.LatLngBounds();
@@ -136,19 +133,19 @@ const GameContent = () => {
     };
     
     const newRoundCallback = async (data: RoundData) => {
-            console.log('New Round!');
-            handleNewRound(data);
-        }
+        console.log('New Round!');
+        handleNewRound(data);
+    };
+
     const gameEndCallback = (data: EndGameData) => {
         handleNewRound(data);
-        setGameState(p => {
-            return {
-                ...p,
-                isEnded: true,
-                winner: data.winner
-            }
-        });
-    }
+        setGameState(p => ({
+            ...p,
+            isEnded: true,
+            winner: data.winner
+        }));
+    };
+
     const messageCallback = (message: string) => {
         toast.error(message);
     };        
@@ -159,68 +156,94 @@ const GameContent = () => {
         setIsSubmitted(true);
     };
 
-    return <div>
-                <div className="absolute pointer-events-none z-40 top-0 h-1/12 w-full">
-                    <div className="relative justify-between text-neutral-50 flex w-full h-full *:pointer-events-auto">
-                        {teams.map((t, index) => <TeamBar rtl={index % 2 !== 0} team={t} />)}
-                    </div>
+    return (
+        <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
+            <div className="absolute pointer-events-none z-40 top-0 h-16 w-full bg-gradient-to-b from-[#080f1a]/90 to-transparent pt-3 px-4">
+                <div className="relative justify-between text-neutral-50 flex w-full h-full *:pointer-events-auto">
+                    {teams.map((t, index) => (
+                        <TeamBar key={index} rtl={index % 2 !== 0} team={t} />
+                    ))}
                 </div>
-                <StreetView
-                    apiKey={apiKey}
-                    zoom={14}
-                    className="w-full h-full absolute z-10 top-0 right-0"
-                    panoramaProps={{
-                        onLoad(v) {
-                            viewRef.current = v;
-                            if (!game) return;
-                            v.setPov({
-                                heading: game.location.heading,
-                                pitch: 5,
-                            });
-                            v.setPosition({
-                                lat: game.location.lat, lng: game.location.lng
-                            });
-                        },
-                        options:
-                        {
-                            zoom: 0.5,
-                            motionTracking: false,
-                            addressControl: false,
-                            fullscreenControl: false,
-                        },
-                    }}
-                />
-                
-                {gameState.isEnded ? <button className="absolute z-20 sm:bottom-10 sm:right-16 rounded sm:w-1/2 md:w-1/4 bg-red-500 hover:bg-red-600 cursor-pointer p-2 text-neutral-50"
-                onClick={leaveGame}>Next!</button>: 
-                <LocationSelectMap submitGuess={submit} moveNext={() => { }} apiKey={apiKey} className="bottom-5 p-2 w-full h-1/3 sm:w-1/2 md:w-1/4 sm:h-1/4 transition-all hover:w-2/5 
-            hover:h-2/5 absolute z-20 sm:bottom-10 sm:right-16 flex flex-col gap-1">
-                    {gameState.roundData ? <>
-                        <TargetMarker position={gameState.roundData.target} />
-                        {allGuesses.map(g => <div key={g.lat + g.lng}>
-                            <Distance path={g && gameState.roundData ? [
-                                g,
-                                gameState.roundData.target
-                            ] : []} visible={!!gameState.roundData} />
-
-                            <GuessMarker position={g} />
-                            {gameState.roundData &&
-                                <div className="absolute rounded bg-neutral-800/70 text-neutral-50
-                                p-2 bottom-2 left-1/2 -translate-x-1/2">
-                                    <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>x km</span></div>
-                                    <div>x points</div>
-                                </div>
-                            }
-                        </div>)
-                        }
-
-                    </> : guessLocation && <GuessMarker position={guessLocation} />
-                    }
-                </LocationSelectMap>
-                }
-                
-                <GameUI />
             </div>
-}
+
+            <StreetView
+                apiKey={apiKey}
+                zoom={14}
+                className="w-full h-full absolute inset-0 z-10"
+                panoramaProps={{
+                    onLoad(v) {
+                        viewRef.current = v;
+                        if (!game) return;
+                        v.setPov({
+                            heading: game.location.heading,
+                            pitch: 5,
+                        });
+                        v.setPosition({
+                            lat: game.location.lat, 
+                            lng: game.location.lng
+                        });
+                    },
+                    options: {
+                        zoom: 0.5,
+                        motionTracking: false,
+                        addressControl: false,
+                        fullscreenControl: false,
+                    },
+                }}
+            />
+            
+            {gameState.isEnded ? (
+                <button 
+                    className="absolute z-40 bottom-6 right-6 md:right-12 rounded-xl w-[calc(100%-3rem)] sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
+                    style={{
+                        background: 'rgba(239,68,68,0.9)',
+                        color: '#fff',
+                        boxShadow: '0 8px 32px rgba(239,68,68,0.4), inset 0 2px 4px rgba(255,255,255,0.2)',
+                    }}
+                    onClick={leaveGame}
+                >
+                    Finish Game!
+                </button>
+            ) : (
+                <LocationSelectMap 
+                    submitGuess={submit} 
+                    moveNext={() => { }} 
+                    apiKey={apiKey} 
+                    className="absolute z-30 bottom-6 right-6 p-1.5 w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
+                >
+                    {gameState.roundData ? (
+                        <>
+                            <TargetMarker position={gameState.roundData.target} />
+                            {allGuesses.map((g, idx) => (
+                                <div key={idx}>
+                                    <Distance 
+                                        path={g && gameState.roundData ? [g, gameState.roundData.target] : []} 
+                                        visible={!!gameState.roundData} 
+                                    />
+                                    <GuessMarker position={g} />
+                                    
+                                    {gameState.roundData && (
+                                        <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[140px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
+                                            <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
+                                                <RiPinDistanceFill size={18} className="animate-pulse" />
+                                                <span>Result</span>
+                                            </div>
+                                            <div className="text-[11px] text-gray-400 mt-1 font-medium tracking-wide">
+                                                Calculated score...
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </>
+                    ) : (
+                        guessLocation && <GuessMarker position={guessLocation} />
+                    )}
+                </LocationSelectMap>
+            )}
+            <GameUI />
+        </div>
+    );
+};
  
 export default GameContent;

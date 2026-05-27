@@ -13,6 +13,9 @@ export default function Home() {
         const W = canvas.width;
         const H = canvas.height;
 
+        const randomOffsetX = Math.random() * W;
+        const randomAngle = (Math.random() * 16 - 8) * Math.PI / 180;
+
         const ocean = ctx.createLinearGradient(0, 0, 0, H);
         ocean.addColorStop(0, '#5bc8f5');
         ocean.addColorStop(0.3, '#1e88e5');
@@ -54,61 +57,46 @@ export default function Home() {
         const x = (v) => v * W;
         const y = (v) => v * H;
 
-        land([
-            [x(0.05), y(0.12)], [x(0.18), y(0.10)], [x(0.24), y(0.15)], [x(0.20), y(0.24)],
-            [x(0.26), y(0.32)], [x(0.15), y(0.38)], [x(0.10), y(0.30)], [x(0.14), y(0.22)],
-            [x(0.04), y(0.20)]
-        ]);
+        ctx.save(); 
+        
+        ctx.translate(randomOffsetX, 0); 
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(randomAngle);
+        ctx.translate(-W / 2, -H / 2);
 
-        land([
-            [x(0.38), y(0.06)], [x(0.48), y(0.04)], [x(0.56), y(0.09)], [x(0.58), y(0.18)],
-            [x(0.48), y(0.22)], [x(0.44), y(0.14)], [x(0.35), y(0.15)]
-        ]);
+        const drawAllIslands = () => {
+            land([[x(0.05), y(0.12)], [x(0.18), y(0.10)], [x(0.24), y(0.15)], [x(0.20), y(0.24)], [x(0.26), y(0.32)], [x(0.15), y(0.38)], [x(0.10), y(0.30)], [x(0.14), y(0.22)], [x(0.04), y(0.20)]]);
+            land([[x(0.38), y(0.06)], [x(0.48), y(0.04)], [x(0.56), y(0.09)], [x(0.58), y(0.18)], [x(0.48), y(0.22)], [x(0.44), y(0.14)], [x(0.35), y(0.15)]]);
+            land([[x(0.68), y(0.14)], [x(0.78), y(0.08)], [x(0.92), y(0.10)], [x(0.96), y(0.24)], [x(0.85), y(0.35)], [x(0.74), y(0.30)], [x(0.76), y(0.22)], [x(0.66), y(0.24)]]);
+            land([[x(0.32), y(0.38)], [x(0.45), y(0.35)], [x(0.52), y(0.44)], [x(0.55), y(0.54)], [x(0.42), y(0.62)], [x(0.34), y(0.56)], [x(0.36), y(0.46)], [x(0.26), y(0.44)]]);
+            land([[x(0.03), y(0.48)], [x(0.15), y(0.50)], [x(0.24), y(0.58)], [x(0.18), y(0.72)], [x(0.06), y(0.76)], [x(0.04), y(0.62)]]);
+            land([[x(0.64), y(0.46)], [x(0.78), y(0.42)], [x(0.88), y(0.48)], [x(0.90), y(0.64)], [x(0.80), y(0.74)], [x(0.66), y(0.68)], [x(0.64), y(0.56)]]);
 
-        land([
-            [x(0.68), y(0.14)], [x(0.78), y(0.08)], [x(0.92), y(0.10)], [x(0.96), y(0.24)],
-            [x(0.85), y(0.35)], [x(0.74), y(0.30)], [x(0.76), y(0.22)], [x(0.66), y(0.24)]
-        ]);
+            land([[x(0.28), y(0.06)], [x(0.31), y(0.05)], [x(0.29), y(0.09)]]);
+            land([[x(0.33), y(0.10)], [x(0.35), y(0.08)], [x(0.34), y(0.12)]]);
+            land([[x(0.62), y(0.07)], [x(0.64), y(0.06)], [x(0.63), y(0.10)]]);
+            land([[x(0.25), y(0.27)], [x(0.27), y(0.26)], [x(0.26), y(0.30)]]);
+            land([[x(0.49), y(0.28)], [x(0.51), y(0.27)], [x(0.50), y(0.32)]]);
+            land([[x(0.58), y(0.34)], [x(0.60), y(0.33)], [x(0.59), y(0.37)]]);
+            land([[x(0.61), y(0.40)], [x(0.63), y(0.39)], [x(0.62), y(0.43)]]);
+            land([[x(0.07), y(0.36)], [x(0.09), y(0.35)], [x(0.08), y(0.39)]]);
+            land([[x(0.83), y(0.18)], [x(0.85), y(0.17)], [x(0.84), y(0.21)]]);
+            land([[x(0.92), y(0.36)], [x(0.94), y(0.35)], [x(0.93), y(0.40)]]);
+            land([[x(0.25), y(0.64)], [x(0.28), y(0.63)], [x(0.26), y(0.67)]]);
+            land([[x(0.29), y(0.70)], [x(0.31), y(0.69)], [x(0.30), y(0.73)]]);
+            land([[x(0.55), y(0.66)], [x(0.57), y(0.65)], [x(0.56), y(0.69)]]);
+            land([[x(0.51), y(0.74)], [x(0.53), y(0.73)], [x(0.52), y(0.77)]]);
+            land([[x(0.75), y(0.78)], [x(0.77), y(0.77)], [x(0.76), y(0.81)]]);
 
-        land([
-            [x(0.32), y(0.38)], [x(0.45), y(0.35)], [x(0.52), y(0.44)], [x(0.55), y(0.54)],
-            [x(0.42), y(0.62)], [x(0.34), y(0.56)], [x(0.36), y(0.46)], [x(0.26), y(0.44)]
-        ]);
+            land([[x(0.00), y(0.90)], [x(0.18), y(0.88)], [x(0.35), y(0.91)], [x(0.55), y(0.87)], [x(0.75), y(0.90)], [x(1.00), y(0.87)], [x(1.00), y(1.00)], [x(0.00), y(1.00)]], '#c8e6c9', '#a5d6a7');
+        };
 
-        land([
-            [x(0.03), y(0.48)], [x(0.15), y(0.50)], [x(0.24), y(0.58)], [x(0.18), y(0.72)],
-            [x(0.06), y(0.76)], [x(0.04), y(0.62)]
-        ]);
+        drawAllIslands();
 
-        land([
-            [x(0.64), y(0.46)], [x(0.78), y(0.42)], [x(0.88), y(0.48)], [x(0.90), y(0.64)],
-            [x(0.80), y(0.74)], [x(0.66), y(0.68)], [x(0.64), y(0.56)]
-        ]);
+        ctx.translate(randomOffsetX > W / 2 ? -W : W, 0);
+        drawAllIslands();
 
-        land([[x(0.28), y(0.06)], [x(0.31), y(0.05)], [x(0.29), y(0.09)]]);
-        land([[x(0.33), y(0.10)], [x(0.35), y(0.08)], [x(0.34), y(0.12)]]);
-        land([[x(0.62), y(0.07)], [x(0.64), y(0.06)], [x(0.63), y(0.10)]]);
-
-        land([[x(0.25), y(0.27)], [x(0.27), y(0.26)], [x(0.26), y(0.30)]]);
-        land([[x(0.49), y(0.28)], [x(0.51), y(0.27)], [x(0.50), y(0.32)]]);
-        land([[x(0.58), y(0.34)], [x(0.60), y(0.33)], [x(0.59), y(0.37)]]);
-        land([[x(0.61), y(0.40)], [x(0.63), y(0.39)], [x(0.62), y(0.43)]]);
-
-        land([[x(0.07), y(0.36)], [x(0.09), y(0.35)], [x(0.08), y(0.39)]]);
-        land([[x(0.83), y(0.18)], [x(0.85), y(0.17)], [x(0.84), y(0.21)]]);
-        land([[x(0.92), y(0.36)], [x(0.94), y(0.35)], [x(0.93), y(0.40)]]);
-
-        land([[x(0.25), y(0.64)], [x(0.28), y(0.63)], [x(0.26), y(0.67)]]);
-        land([[x(0.29), y(0.70)], [x(0.31), y(0.69)], [x(0.30), y(0.73)]]);
-        land([[x(0.55), y(0.66)], [x(0.57), y(0.65)], [x(0.56), y(0.69)]]);
-        land([[x(0.51), y(0.74)], [x(0.53), y(0.73)], [x(0.52), y(0.77)]]);
-        land([[x(0.75), y(0.78)], [x(0.77), y(0.77)], [x(0.76), y(0.81)]]);
-
-        land([
-            [x(0.00), y(0.90)], [x(0.18), y(0.88)], [x(0.35), y(0.91)],
-            [x(0.55), y(0.87)], [x(0.75), y(0.90)], [x(1.00), y(0.87)],
-            [x(1.00), y(1.00)], [x(0.00), y(1.00)],
-        ], '#c8e6c9', '#a5d6a7');
+        ctx.restore(); 
 
         const gloss = ctx.createRadialGradient(W * 0.28, H * 0.08, 0, W * 0.45, H * 0.28, W * 0.65);
         gloss.addColorStop(0, 'rgba(255,255,255,0.25)');
@@ -131,20 +119,19 @@ export default function Home() {
 
     return (
         <div className="relative w-full h-screen flex flex-col items-center bg-[#080f1a] font-sans overflow-hidden text-white">
-
             <div className="absolute inset-0 pointer-events-none" style={{
                 backgroundImage: `
-          radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.8) 0%, transparent 100%),
-          radial-gradient(1.5px 1.5px at 22% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
-          radial-gradient(1px 1px at 65% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
-          radial-gradient(1px 1px at 80% 28%, rgba(255,255,255,0.5) 0%, transparent 100%),
-          radial-gradient(1px 1px at 45% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
-          radial-gradient(1px 1px at 5% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
-          radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
-          radial-gradient(1px 1px at 55% 42%, rgba(255,255,255,0.3) 0%, transparent 100%),
-          radial-gradient(1px 1px at 35% 88%, rgba(255,255,255,0.4) 0%, transparent 100%),
-          radial-gradient(1px 1px at 72% 70%, rgba(255,255,255,0.35) 0%, transparent 100%)
-        `
+                  radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.8) 0%, transparent 100%),
+                  radial-gradient(1.5px 1.5px at 22% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 65% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 80% 28%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 45% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 5% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 55% 42%, rgba(255,255,255,0.3) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 35% 88%, rgba(255,255,255,0.4) 0%, transparent 100%),
+                  radial-gradient(1px 1px at 72% 70%, rgba(255,255,255,0.35) 0%, transparent 100%)
+                `
             }} />
 
             <header className="relative z-20 flex flex-col items-center pt-12 md:pt-16 px-4 text-center">
