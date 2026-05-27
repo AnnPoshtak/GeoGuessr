@@ -1,3 +1,4 @@
+import { ProfileDropdown } from '@/components/Profile/Profile';
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -134,7 +135,11 @@ export default function Home() {
                 `
             }} />
 
-            <header className="relative z-20 flex flex-col items-center pt-12 md:pt-16 px-4 text-center">
+            <header className="relative z-20 w-full flex flex-col items-center pt-12 md:pt-16 px-4 text-center">
+                <div className="absolute right-6 top-6 md:right-10 md:top-10">
+                    <ProfileDropdown />
+                </div>
+
                 <h1
                     className="text-5xl md:text-7xl font-black tracking-[0.22em] uppercase text-white"
                     style={{ textShadow: '0 0 40px rgba(79,195,247,0.4), 0 2px 4px rgba(0,0,0,0.8)' }}
