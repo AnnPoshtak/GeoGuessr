@@ -1,6 +1,5 @@
-import getRandomLocation from "@/api/getRandomLocation/getRandomLocation";
+import { gameApi } from "@/api";
 import queryClient from "@/api/queryClient";
-import submitGuess from "@/api/submitGuess/submitGuess";
 import Distance from "@/components/Distance/Distance";
 import GameUI from "@/components/GameUI/GameUI.tsx";
 import GuessMarker from "@/components/GuessMarker/GuessMarker";
@@ -19,7 +18,7 @@ function SinglePlayer() {
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],
         queryFn: async () => {
-            const data = await getRandomLocation();
+            const data = await gameApi.getRandomLocation();
             if (viewRef.current) {
                 viewRef.current.setPov({
                     heading: data.heading,
@@ -44,7 +43,7 @@ function SinglePlayer() {
     const submitGuessMutation = useMutation(
         {
             mutationFn: async (location: MapLocation) => {
-                return await submitGuess(location);
+                return await gameApi.submitGuess(location);
             },
             onSuccess: (data) => {
                 setGuessSubmitResponse(data);

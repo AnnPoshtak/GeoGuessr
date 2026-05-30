@@ -1,14 +1,12 @@
 import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
-import apiRequest from "../apiRequest/apiRequest";
+import { gameApi } from "../index";
 
+/**
+ * @deprecated Use gameApi.getRandomLocation() instead
+ * Import: import { gameApi } from '@/api'
+ */
 async function getRandomLocation() {
-    const data = await apiRequest<StreetViewLocationFromApi>('/game/random_location/', {
-        headers: {
-            "Content-Type": "application/json"
-        },
-        credentials: "include",
-    });
-    return data;
+    return gameApi.getRandomLocation();
 }
 
 export default getRandomLocation;

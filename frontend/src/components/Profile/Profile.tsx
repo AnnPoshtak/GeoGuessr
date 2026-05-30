@@ -1,25 +1,16 @@
 import { useState, useEffect } from 'react';
 import { User, ChevronDown, LogOut, LogIn } from 'lucide-react';
+import { usersApi, authApi } from '@/api';
 
 export const ProfileDropdown = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-
   const checkUserAuth = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/users/me`, { 
-        credentials: 'include' 
-      });
-
-      if (response.status === 401 || !response.ok) {
-        setUser(null);
-      } else {
-        const data = await response.json();
-        setUser(data); 
-      }
+      const userData = await usersApi.getCurrentUser();
+      setUser(userData);
     } catch (error) {
       console.error('Authentication error:', error);
       setUser(null);
@@ -30,26 +21,23 @@ export const ProfileDropdown = () => {
 
   useEffect(() => {
     checkUserAuth();
-  }, [BACKEND_URL]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
-      checkUserAuth(); 
+      checkUserAuth();
     }
   }, [isOpen]);
 
   const toggleDropdown = () => setIsOpen(prevState => !prevState);
 
   const handleLogin = () => {
-    window.location.href = 'http://localhost:5000/oauth/authorize/google/';
+    window.location.href = authApi.getOAuthUrl('google');
   };
 
   const handleLogout = async () => {
     try {
-      await fetch(`${BACKEND_URL}/auth/logout`, { 
-        method: 'GET',
-        credentials: 'include'
-      });
+      await authApi.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
