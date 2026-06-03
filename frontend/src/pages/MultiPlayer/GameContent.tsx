@@ -208,6 +208,7 @@ const GameContent = () => {
                 <LocationSelectMap 
                     submitGuess={submit} 
                     moveNext={() => { }} 
+                    isMoveNextBtnEnabled={false}
                     apiKey={apiKey} 
                     className="absolute z-30 bottom-6 right-6 p-1.5 w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
                 >
@@ -221,20 +222,17 @@ const GameContent = () => {
                                         visible={!!gameState.roundData} 
                                     />
                                     <GuessMarker position={g} />
-                                    
-                                    {gameState.roundData && (
-                                        <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[140px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
-                                            <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
-                                                <RiPinDistanceFill size={18} className="animate-pulse" />
-                                                <span>Result</span>
-                                            </div>
-                                            <div className="text-[11px] text-gray-400 mt-1 font-medium tracking-wide">
-                                                Calculated score...
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             ))}
+                            <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[140px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
+                                <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
+                                    <RiPinDistanceFill size={18} className="animate-pulse" />
+                                    <span>Result</span>
+                                </div>
+                                <div className="text-[11px] text-gray-400 mt-1 font-medium tracking-wide">
+                                    Calculated score...
+                                </div>
+                            </div>
                         </>
                     ) : (
                         guessLocation && <GuessMarker position={guessLocation} />
