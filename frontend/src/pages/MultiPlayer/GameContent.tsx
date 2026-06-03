@@ -11,7 +11,7 @@ import { useMultiplayerContext } from "@/context/MultiplayerContext";
 import type { GameRoom } from "@/interfaces/GameRoom";
 import type { MapLocation } from "@/interfaces/MapLocation";
 import type { RoundData } from "@/interfaces/RoundData";
-import type { Team } from "@/interfaces/Team";
+import type { ApiTeam, Team } from "@/interfaces/Team";
 import fetchGame from "@/ws/fetchGame";
 import submitGuess from "@/ws/submitGuess";
 import { gameQueue, gameRoom } from "@/ws/wsClient";
@@ -39,6 +39,26 @@ const GameContent = () => {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { gameKey, isJoined } = useMultiplayerContext();
 
+    const setIsPlayerConnected = (playerId: number, value: boolean) => {
+        setTeams(prev => prev.map(t => 
+            ({
+                ...t,
+                players: t.players.map((p) => p.id === playerId ? {
+                    ...p,
+                    isConnected: value,
+                } : p)
+            })
+        ));  
+    };
+
+    const initTeams = (teams: ApiTeam[]) => teams.map((t) => ({
+        ...t,
+        players: t.players.map(p => ({
+            ...p,
+            isConnected: true,
+        }))
+    }))
+
     const navigate = useNavigate();
     const [gameState, setGameState] = useState<GameState>({
         isEnded: false,
@@ -62,10 +82,12 @@ const GameContent = () => {
         gameQueue.on('new_round', newRoundCallback);
 
         gameRoom.on('player_reconnected', (data) => {
+            setIsPlayerConnected(data.id, true);
             toast.info(`Player ${data.username} has reconnected to the game!`);
         });
-
+        
         gameRoom.on('player_disconnected', (data) => {
+            setIsPlayerConnected(data.id, false);
             toast.info(`Player ${data.username} has disconnected from the game!`);
         });
 
@@ -97,7 +119,7 @@ const GameContent = () => {
             console.log('Fetching game...');
             const data = await fetchGame();
             console.log(data);
-            setTeams(data.teams);
+            setTeams(initTeams(data.teams));
             if (viewRef.current) {
                 viewRef.current.setPov({
                     heading: data.location.heading,
@@ -121,7 +143,7 @@ const GameContent = () => {
     const handleNewRound = (data: RoundData) => {
         if (!map) return;
         const bounds = new google.maps.LatLngBounds();
-        setTeams(data.teams);
+        setTeams(initTeams(data.teams));
         data.teams.forEach((t) => {
             for (let pl of t.players) {
                 setAllGuesses(p => [...p, pl.guess]);

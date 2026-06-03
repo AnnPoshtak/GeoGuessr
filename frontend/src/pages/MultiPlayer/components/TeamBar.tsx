@@ -1,7 +1,7 @@
 import config from "@/config";
-import type { Player } from "@/interfaces/Player";
+import type { TeamPlayer } from "@/interfaces/Player";
 import type { Team } from "@/interfaces/Team";
-import { RiUser2Fill } from "react-icons/ri";
+import { RiSignalWifiErrorLine, RiUser2Fill } from "react-icons/ri";
 
 interface TeamBarProps {
     team: Team;
@@ -9,12 +9,16 @@ interface TeamBarProps {
 };
 
 interface TeamPlayerProps {
-    player: Player;
+    player: TeamPlayer;
 }
 
 const TeamPlayer = ({player}: TeamPlayerProps) => {
-    return <div>
-        <RiUser2Fill />
+    return <div className={!player.isConnected ? 'text-gray-600' : ''}>
+        {player.isConnected ? <RiUser2Fill /> : <div>
+            <RiUser2Fill />
+            <RiSignalWifiErrorLine />
+        </div>}
+        
         <p className="text-sm">{player.username}</p>
     </div>
 }
