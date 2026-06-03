@@ -80,7 +80,7 @@ function Multiplayer() {
 
             <main className="relative z-20 flex-1 w-full max-w-4xl flex flex-col items-center justify-center px-4 pb-12">
                 <div className="w-full max-w-md bg-[#0c1524]/60 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
-                    <Queue players={[]} join={joinQueue} leave={leaveQueue} />
+                    <Queue join={joinQueue} leave={leaveQueue} />
                 </div>
             </main>
         </div>
