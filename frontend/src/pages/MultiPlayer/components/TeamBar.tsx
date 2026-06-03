@@ -1,5 +1,5 @@
 import config from "@/config";
-import type { Player, User } from "@/interfaces/Player";
+import type { Player } from "@/interfaces/Player";
 import type { Team } from "@/interfaces/Team";
 import { RiUser2Fill } from "react-icons/ri";
 
@@ -9,7 +9,7 @@ interface TeamBarProps {
 };
 
 interface TeamPlayerProps {
-    player: User;
+    player: Player;
 }
 
 const TeamPlayer = ({player}: TeamPlayerProps) => {

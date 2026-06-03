@@ -2,10 +2,10 @@ from flask_socketio import Namespace, emit, send
 from flask import session, current_app
 from app import game_room
 from app.core.util import calculate_line_distance, calculate_score
-from .util import join_game, authenticated_only, join_game_currently_in
+from .util import join_game, authenticated_only, join_game_currently_in, get_full_player_data
 import json
 from flask_login import current_user
-from app.models import UserModel
+from app.schemas import user_public_schema
 
 class GameNamespace(Namespace):
     @authenticated_only
@@ -19,9 +19,7 @@ class GameNamespace(Namespace):
         if game_key:
             emit(
                 'player_disconnected', 
-                {
-                    'username': current_user.username,
-                },
+                user_public_schema.dump(current_user),
                 broadcast=True,
                 to=game_key
             )
@@ -45,12 +43,7 @@ class GameNamespace(Namespace):
         for t in game['teams']:
             players = []
             for p in t['players']:
-                # TODO: use marshmallow for serialization
-                u = UserModel.query.get(p)
-                u = {
-                    'username': u.username,
-                }
-                players.append(u)
+                players.append(get_full_player_data(game_key, p))
             t['players'] = players
             teams.append(t)
         game['round'] = int(game['round'])

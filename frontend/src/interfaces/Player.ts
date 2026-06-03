@@ -1,8 +1,10 @@
 import type { MapLocation } from "./MapLocation";
 
-export interface Player {
-    guess: MapLocation,
-}
 export interface User {
+    id: number;
     username: string;
+}
+
+export interface Player extends User {
+    guess: MapLocation,
 }

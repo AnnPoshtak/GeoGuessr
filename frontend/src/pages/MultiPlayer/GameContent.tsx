@@ -96,6 +96,7 @@ const GameContent = () => {
         queryFn: async () => {
             console.log('Fetching game...');
             const data = await fetchGame();
+            console.log(data);
             setTeams(data.teams);
             if (viewRef.current) {
                 viewRef.current.setPov({
