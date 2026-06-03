@@ -61,6 +61,14 @@ const GameContent = () => {
         gameRoom.on('new_round', newRoundCallback);
         gameQueue.on('new_round', newRoundCallback);
 
+        gameRoom.on('player_reconnected', (data) => {
+            toast.info(`Player ${data.username} has reconnected to the game!`);
+        });
+
+        gameRoom.on('player_disconnected', (data) => {
+            toast.info(`Player ${data.username} has disconnected from the game!`);
+        });
+
         gameRoom.on('game_end', gameEndCallback);
         gameQueue.on('game_end', gameEndCallback);
         
@@ -69,6 +77,9 @@ const GameContent = () => {
             gameRoom.off('game_end');
             gameRoom.off('message');
             
+            gameRoom.off('player_reconnected');
+            gameRoom.off('player_disconnected');
+
             gameQueue.off('new_round');
             gameQueue.off('game_end');
         };

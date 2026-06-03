@@ -26,5 +26,13 @@ def join_game_currently_in() -> bool:
     game_key = game_room.get_current_game(current_user.id)
     if game_key:
         join_game(current_user.id, game_key)
+        emit(
+            'player_reconnected', 
+            {
+                'username': current_user.username,
+            },
+            broadcast=True,
+            to=game_key
+        )
         return True
     return False

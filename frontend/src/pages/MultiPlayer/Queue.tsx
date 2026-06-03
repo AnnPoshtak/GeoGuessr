@@ -4,7 +4,6 @@ import { useEffect, useState, type MouseEventHandler } from "react";
 import { toast } from "sonner";
 
 interface QueueProps {
-    players: number[];
     join: MouseEventHandler<HTMLButtonElement>;
     leave: MouseEventHandler<HTMLButtonElement>;
 }

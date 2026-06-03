@@ -12,6 +12,20 @@ class GameNamespace(Namespace):
     def on_connect(self):
         join_game_currently_in()
 
+    def on_disconnect(self, reason):
+        if not current_user:
+            return
+        game_key = game_room.get_current_game(current_user.id)
+        if game_key:
+            emit(
+                'player_disconnected', 
+                {
+                    'username': current_user.username,
+                },
+                broadcast=True,
+                to=game_key
+            )
+
     def _emit_new_round(self, target: dict, teams: list, game_key: str) -> None:
         emit('new_round', {
             'target': target,
@@ -73,7 +87,6 @@ class GameNamespace(Namespace):
             teams = game_room.get_teams(game_key)
             for team in teams:
                 t_score = []
-                team['players'] = json.loads(team['players'])
                 for i, p in enumerate(team['players']):
                     player = game_room.get_player(game_key, p)
                     player['guess'] = json.loads(player['guess'])
