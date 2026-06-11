@@ -14,7 +14,7 @@ function Multiplayer() {
             player_count: 2
         });
     };
-    
+
     const leaveQueue = () => {
         gameQueue.emit('leave');
         setIsJoined(false);
@@ -32,7 +32,7 @@ function Multiplayer() {
 
         gameQueue.on('game_joined', () => {
             handleJoinGame();
-        }); 
+        });
     }, []);
 
     if (isJoined) {
@@ -58,14 +58,15 @@ function Multiplayer() {
                 `
             }} />
 
+            <button
+                onClick={() => { leaveQueue(); navigate('/'); }}
+                className="absolute left-10 top-0 md:top-9 text-xs font-bold tracking-widest text-gray-400 uppercase hover:text-white transition-colors duration-150 flex items-center gap-1"
+            >
+                ← Back
+            </button>
             <header className="relative z-20 flex flex-col items-center pt-10 md:pt-14 px-4 text-center select-none">
-                <button 
-                    onClick={() => { leaveQueue(); navigate('/'); }}
-                    className="absolute left-4 top-10 md:top-14 text-xs font-bold tracking-widest text-gray-400 uppercase hover:text-white transition-colors duration-150 flex items-center gap-1"
-                >
-                    ← Back
-                </button>
-                
+
+
                 <h1
                     className="text-4xl md:text-5xl font-black tracking-[0.25em] uppercase text-white"
                     style={{ textShadow: '0 0 40px rgba(79,195,247,0.3), 0 2px 4px rgba(0,0,0,0.8)' }}
