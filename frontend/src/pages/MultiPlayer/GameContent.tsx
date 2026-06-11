@@ -40,15 +40,15 @@ const GameContent = () => {
     const { gameKey, isJoined } = useMultiplayerContext();
 
     const setIsPlayerConnected = (playerId: number, value: boolean) => {
-        setTeams(prev => prev.map(t => 
-            ({
-                ...t,
-                players: t.players.map((p) => p.id === playerId ? {
-                    ...p,
-                    isConnected: value,
-                } : p)
-            })
-        ));  
+        setTeams(prev => prev.map(t =>
+        ({
+            ...t,
+            players: t.players.map((p) => p.id === playerId ? {
+                ...p,
+                isConnected: value,
+            } : p)
+        })
+        ));
     };
 
     const initTeams = (teams: ApiTeam[]) => teams.map((t) => ({
@@ -65,7 +65,7 @@ const GameContent = () => {
         winner: null,
         roundData: null,
     });
-    
+
     useEffect(() => {
         if (!gameState.isEnded) return;
         const timeout = setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
@@ -85,7 +85,7 @@ const GameContent = () => {
             setIsPlayerConnected(data.id, true);
             toast.info(`Player ${data.username} has reconnected to the game!`);
         });
-        
+
         gameRoom.on('player_disconnected', (data) => {
             setIsPlayerConnected(data.id, false);
             toast.info(`Player ${data.username} has disconnected from the game!`);
@@ -93,12 +93,12 @@ const GameContent = () => {
 
         gameRoom.on('game_end', gameEndCallback);
         gameQueue.on('game_end', gameEndCallback);
-        
-        return () => { 
+
+        return () => {
             gameRoom.off('new_round');
             gameRoom.off('game_end');
             gameRoom.off('message');
-            
+
             gameRoom.off('player_reconnected');
             gameRoom.off('player_disconnected');
 
@@ -165,7 +165,7 @@ const GameContent = () => {
             setAllGuesses([]);
         }, config.roundAutoMoveCooldown);
     };
-    
+
     const newRoundCallback = async (data: RoundData) => {
         console.log('New Round!');
         handleNewRound(data);
@@ -182,7 +182,7 @@ const GameContent = () => {
 
     const messageCallback = (message: string) => {
         toast.error(message);
-    };        
+    };
 
     const submit = () => {
         if (!guessLocation) return;
@@ -192,8 +192,8 @@ const GameContent = () => {
 
     return (
         <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
-            <div className="absolute pointer-events-none z-40 top-0 h-16 w-full bg-gradient-to-b from-[#080f1a]/90 to-transparent pt-3 px-4">
-                <div className="relative justify-between text-neutral-50 flex w-full h-full *:pointer-events-auto">
+            <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-4 md:px-6">
+                <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
                     {teams.map((t, index) => (
                         <TeamBar key={index} rtl={index % 2 !== 0} team={t} />
                     ))}
@@ -213,7 +213,7 @@ const GameContent = () => {
                             pitch: 5,
                         });
                         v.setPosition({
-                            lat: game.location.lat, 
+                            lat: game.location.lat,
                             lng: game.location.lng
                         });
                     },
@@ -225,9 +225,9 @@ const GameContent = () => {
                     },
                 }}
             />
-            
+
             {gameState.isEnded ? (
-                <button 
+                <button
                     className="absolute z-40 bottom-6 right-6 md:right-12 rounded-xl w-[calc(100%-3rem)] sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
                     style={{
                         background: 'rgba(239,68,68,0.9)',
@@ -239,11 +239,11 @@ const GameContent = () => {
                     Finish Game!
                 </button>
             ) : (
-                <LocationSelectMap 
-                    submitGuess={submit} 
-                    moveNext={() => { }} 
+                <LocationSelectMap
+                    submitGuess={submit}
+                    moveNext={() => { }}
                     isMoveNextBtnEnabled={false}
-                    apiKey={apiKey} 
+                    apiKey={apiKey}
                     className="absolute z-30 bottom-6 right-6 p-1.5 w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
                 >
                     {gameState.roundData ? (
@@ -251,9 +251,9 @@ const GameContent = () => {
                             <TargetMarker position={gameState.roundData.target} />
                             {allGuesses.map((g, idx) => (
                                 <div key={idx}>
-                                    <Distance 
-                                        path={g && gameState.roundData ? [g, gameState.roundData.target] : []} 
-                                        visible={!!gameState.roundData} 
+                                    <Distance
+                                        path={g && gameState.roundData ? [g, gameState.roundData.target] : []}
+                                        visible={!!gameState.roundData}
                                     />
                                     <GuessMarker position={g} />
                                 </div>
@@ -277,5 +277,5 @@ const GameContent = () => {
         </div>
     );
 };
- 
+
 export default GameContent;
