@@ -3,6 +3,7 @@ import queryClient from "@/api/queryClient";
 import Distance from "@/components/Distance/Distance";
 import GameUI from "@/components/GameUI/GameUI.tsx";
 import GuessMarker from "@/components/GuessMarker/GuessMarker";
+import { GuessOverlay } from "@/components/GuessOverlay";
 import LocationSelectMap from "@/components/LocationSelectMap/LocationSelectMap";
 import StreetView from "@/components/StreetView/StreetView.tsx";
 import TargetMarker from "@/components/TargetMarker/TargetMarker";
@@ -18,7 +19,8 @@ function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const navigate = useNavigate();
     const [isEnded, setIsEnded] = useState(false);
-    
+    const [showOverlay, setShowOverlay] = useState(false);
+
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],
         queryFn: async () => {
@@ -40,19 +42,23 @@ function SinglePlayer() {
         enabled: !isEnded
     });
 
-    const { 
-        setIsSubmitted, 
-        guessLocation, 
-        map, 
-        guessSubmitResponse, 
-        setGuessSubmitResponse, 
-        setGuessLocation 
+    const {
+        setIsSubmitted,
+        guessLocation,
+        map,
+        guessSubmitResponse,
+        setGuessSubmitResponse,
+        setGuessLocation
     } = useGameContext();
 
     const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
     useEffect(() => {
         setIsSubmitted(!!guessSubmitResponse?.guess);
+
+        if (guessSubmitResponse) {
+            setShowOverlay(true);
+        }
     }, [guessSubmitResponse, setIsSubmitted]);
 
     const submitGuessMutation = useMutation({
@@ -85,6 +91,7 @@ function SinglePlayer() {
         });
         setGuessLocation(null);
         setGuessSubmitResponse(null);
+        setShowOverlay(false);
     };
 
     const leaveGame = () => {
@@ -98,7 +105,7 @@ function SinglePlayer() {
             </div>
         );
     }
-    
+
     if (isError) {
         return (
             <div className="w-full h-full absolute inset-0 bg-[#080f1a] flex items-center justify-center text-red-400 font-medium">
@@ -123,7 +130,7 @@ function SinglePlayer() {
                                 pitch: 5,
                             });
                             v.setPosition({
-                                lat: location.lat, 
+                                lat: location.lat,
                                 lng: location.lng
                             });
                         },
@@ -138,7 +145,7 @@ function SinglePlayer() {
             )}
 
             {isEnded ? (
-                <button 
+                <button
                     className="absolute z-40 bottom-6 right-6 md:right-12 rounded-xl w-[calc(100%-3rem)] sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
                     style={{
                         background: '#dc2626',
@@ -150,18 +157,18 @@ function SinglePlayer() {
                     Finish Game!
                 </button>
             ) : (
-                <LocationSelectMap 
-                    isMoveNextBtnEnabled={!!guessSubmitResponse} 
-                    submitGuess={submit} 
-                    moveNext={moveNext} 
-                    apiKey={apiKey} 
+                <LocationSelectMap
+                    isMoveNextBtnEnabled={!!guessSubmitResponse}
+                    submitGuess={submit}
+                    moveNext={moveNext}
+                    apiKey={apiKey}
                     className="absolute z-30 bottom-6 right-6 p-1.5 w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
                 >
-                    <Distance 
-                        path={guessLocation && guessSubmitResponse?.target ? [guessLocation, guessSubmitResponse.target] : []} 
-                        visible={!!guessSubmitResponse?.target && !!guessLocation} 
+                    <Distance
+                        path={guessLocation && guessSubmitResponse?.target ? [guessLocation, guessSubmitResponse.target] : []}
+                        visible={!!guessSubmitResponse?.target && !!guessLocation}
                     />
-                    
+
                     {guessSubmitResponse && (
                         <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[140px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
                             <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
@@ -169,8 +176,8 @@ function SinglePlayer() {
                                 <span>Result</span>
                             </div>
                             <div className="text-sm font-bold mt-1 text-neutral-50">
-                                {guessSubmitResponse.distance > 1000 
-                                    ? `${Math.floor(guessSubmitResponse.distance / 1000)} km` 
+                                {guessSubmitResponse.distance > 1000
+                                    ? `${Math.floor(guessSubmitResponse.distance / 1000)} km`
                                     : `${Math.floor(guessSubmitResponse.distance)} m`}
                             </div>
                             <div className="text-[11px] text-gray-400 font-medium tracking-wide">
@@ -183,6 +190,13 @@ function SinglePlayer() {
                     {guessSubmitResponse && <TargetMarker position={guessSubmitResponse.target} />}
                 </LocationSelectMap>
             )}
+
+            {/* Guess result overlay with animations */}
+            <GuessOverlay
+                distanceKm={guessSubmitResponse ? guessSubmitResponse.distance / 1000 : null}
+                isVisible={showOverlay}
+                onComplete={() => setShowOverlay(false)}
+            />
 
             <GameUI />
         </div>
