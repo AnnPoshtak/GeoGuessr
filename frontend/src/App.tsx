@@ -6,7 +6,8 @@ import Home from "./pages/Home/Home.tsx";
 import { Toaster } from "sonner";
 import { GameContextProvider } from "./context/GameContext.tsx";
 import { MultiplayerContextProvider } from "./context/MultiplayerContext.tsx";
-import Multiplayer from "./pages/MultiPlayer/MultiPlayer.tsx";
+import MultiplayerMenu from "./pages/MultiPlayer/MultiplayerMenu.tsx";
+import MultiplayerGame from "./pages/MultiPlayer/MultiPlayer.tsx";
 
 import Music1 from "./public/sound/music1.mp3";
 import Music2 from "./public/sound/music2.mp3";
@@ -33,7 +34,7 @@ export function BackgroundMusicPlayer() {
     useEffect(() => {
         if (!audioRef.current) return;
 
-        const isInGame = location.pathname === "/single-game" || location.pathname === "/multiplayer";
+        const isInGame = location.pathname === "/single-game" || location.pathname === "/multiplayer-game";
         audioRef.current.volume = isInGame ? volume * 0.15 : volume;
 
         if (isPlaying) {
@@ -90,10 +91,11 @@ function App() {
                             <SinglePlayer />
                         </GameContextProvider>
                     }></Route>
-                    <Route path="/multiplayer" element={
+                    <Route path="/multiplayer" element={<MultiplayerMenu />}></Route>
+                    <Route path="/multiplayer-game" element={
                         <GameContextProvider>
                             <MultiplayerContextProvider>
-                                <Multiplayer />
+                                <MultiplayerGame />
                             </MultiplayerContextProvider>
                         </GameContextProvider>
                     }></Route>
