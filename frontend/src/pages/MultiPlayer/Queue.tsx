@@ -6,12 +6,15 @@ import { toast } from "sonner";
 interface QueueProps {
     join: MouseEventHandler<HTMLButtonElement>;
     leave: MouseEventHandler<HTMLButtonElement>;
+    mode: '1v1' | '2v2' | null;
 }
 
-const Queue = ({ join, leave }: QueueProps) => {
+const Queue = ({ join, leave, mode }: QueueProps) => {
     const [players, setPlayers] = useState<number[]>([]);
     const [inQueue, setInQueue] = useState(false);
     const { setGameKey } = useMultiplayerContext();
+
+    const totalPlayers = mode === '2v2' ? 4 : 2;
 
     const messageCallback = (message: string) => {
         toast.error(message);
@@ -45,6 +48,22 @@ const Queue = ({ join, leave }: QueueProps) => {
             gameQueue.off('message', messageCallback);
         };
     }, []);
+
+    const getWaitingMessage = () => {
+        if (totalPlayers === 4) {
+            return players.length === 1 
+                ? "Waiting for 3 more players..." 
+                : players.length === 2 
+                    ? "Waiting for 2 more players..." 
+                    : players.length === 3 
+                        ? "Waiting for 1 more player..." 
+                        : `There are ${players.length} players in the lobby...`;
+        } else {
+            return players.length === 1 
+                ? "Waiting for an opponent to connect..." 
+                : `There are ${players.length} players in the lobby...`;
+        }
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[250px] w-full text-center">
@@ -81,7 +100,7 @@ const Queue = ({ join, leave }: QueueProps) => {
                             style={{ filter: 'drop-shadow(0 0 6px #00e5ff)' }}
                         />
                         <span className="text-xs font-black text-cyan-400 tracking-tighter">
-                            {players.length}/2
+                            {players.length}/{totalPlayers}
                         </span>
                     </div>
 
@@ -90,9 +109,7 @@ const Queue = ({ join, leave }: QueueProps) => {
                             Searching for players
                         </h2>
                         <p className="text-[11px] text-gray-400 tracking-wider">
-                            {players.length === 1 
-                                ? "Waiting for an opponent to connect..." 
-                                : `There are ${players.length} players in the lobby...`}
+                            {getWaitingMessage()}
                         </p>
                     </div>
 

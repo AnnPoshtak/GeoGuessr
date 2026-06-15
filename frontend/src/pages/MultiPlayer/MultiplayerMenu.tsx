@@ -7,10 +7,11 @@ import { useEffect, useState } from 'react';
 export default function MultiplayerMenu() {
     const navigate = useNavigate();
     const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
-    const { setIsJoined, setGameKey } = useMultiplayerContext();
+    const { setIsJoined, setGameMode } = useMultiplayerContext();
 
     const handleSelectMode = (mode: '1v1' | '2v2') => {
         setSelectedMode(mode);
+        setGameMode(mode);
     };
 
     const handleJoinGame = () => {
@@ -22,13 +23,15 @@ export default function MultiplayerMenu() {
         if (!selectedMode) return;
         const playerCount = selectedMode === '2v2' ? 4 : 2;
         gameQueue.emit('join', {
-            player_count: playerCount
+            player_count: playerCount,
+            mode: selectedMode
         });
     };
 
     const leaveQueue = () => {
         gameQueue.emit('leave');
         setSelectedMode(null);
+        setGameMode(null);
     };
 
     const handleBackClick = () => {
@@ -89,7 +92,7 @@ export default function MultiplayerMenu() {
 
                 <main className="relative z-20 flex-1 w-full max-w-4xl flex flex-col items-center justify-center px-4 pb-12">
                     <div className="w-full max-w-md bg-[#0c1524]/60 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
-                        <Queue join={joinQueue} leave={leaveQueue} />
+                        <Queue join={joinQueue} leave={leaveQueue} mode={selectedMode} />
                     </div>
                 </main>
             </div>
