@@ -5,6 +5,13 @@ import { useNavigate } from 'react-router-dom';
 export default function Home() {
     const navigate = useNavigate();
     const canvasRef = useRef(null);
+    const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+
+    const handleMouseMove = (e) => {
+        const { innerWidth, innerHeight } = window;
+        mouseRef.current.targetX = (e.clientX / innerWidth - 0.5) * 2;
+        mouseRef.current.targetY = (e.clientY / innerHeight - 0.5) * 2;
+    };
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -14,21 +21,25 @@ export default function Home() {
         const W = canvas.width;
         const H = canvas.height;
 
-        const randomOffsetX = Math.random() * W;
-        const randomAngle = (Math.random() * 16 - 8) * Math.PI / 180;
+        let animationFrameId;
+        let globalOffset = 0;
+
+        const x = (v) => v * W;
+        const y = (v) => v * H;
 
         const ocean = ctx.createLinearGradient(0, 0, 0, H);
         ocean.addColorStop(0, '#5bc8f5');
         ocean.addColorStop(0.3, '#1e88e5');
         ocean.addColorStop(1, '#0a3d8f');
-        ctx.fillStyle = ocean;
-        ctx.fillRect(0, 0, W, H);
 
         const atm = ctx.createLinearGradient(0, 0, 0, H * 0.15);
         atm.addColorStop(0, 'rgba(255,255,255,0.5)');
         atm.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = atm;
-        ctx.fillRect(0, 0, W, H * 0.15);
+
+        const gloss = ctx.createRadialGradient(W * 0.28, H * 0.08, 0, W * 0.45, H * 0.28, W * 0.65);
+        gloss.addColorStop(0, 'rgba(255,255,255,0.25)');
+        gloss.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+        gloss.addColorStop(1, 'rgba(0,0,0,0)');
 
         function land(points, color = '#2d7a4f', shadow = '#1a5c35') {
             if (points.length < 2) return;
@@ -54,16 +65,6 @@ export default function Home() {
             ctx.lineWidth = 1.5;
             ctx.stroke();
         }
-
-        const x = (v) => v * W;
-        const y = (v) => v * H;
-
-        ctx.save(); 
-        
-        ctx.translate(randomOffsetX, 0); 
-        ctx.translate(W / 2, H / 2);
-        ctx.rotate(randomAngle);
-        ctx.translate(-W / 2, -H / 2);
 
         const drawAllIslands = () => {
             land([[x(0.05), y(0.12)], [x(0.18), y(0.10)], [x(0.24), y(0.15)], [x(0.20), y(0.24)], [x(0.26), y(0.32)], [x(0.15), y(0.38)], [x(0.10), y(0.30)], [x(0.14), y(0.22)], [x(0.04), y(0.20)]]);
@@ -92,34 +93,70 @@ export default function Home() {
             land([[x(0.00), y(0.90)], [x(0.18), y(0.88)], [x(0.35), y(0.91)], [x(0.55), y(0.87)], [x(0.75), y(0.90)], [x(1.00), y(0.87)], [x(1.00), y(1.00)], [x(0.00), y(1.00)]], '#c8e6c9', '#a5d6a7');
         };
 
-        drawAllIslands();
+        const render = () => {
+            mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
+            mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
 
-        ctx.translate(randomOffsetX > W / 2 ? -W : W, 0);
-        drawAllIslands();
+            ctx.clearRect(0, 0, W, H);
 
-        ctx.restore(); 
+            ctx.fillStyle = ocean;
+            ctx.fillRect(0, 0, W, H);
 
-        const gloss = ctx.createRadialGradient(W * 0.28, H * 0.08, 0, W * 0.45, H * 0.28, W * 0.65);
-        gloss.addColorStop(0, 'rgba(255,255,255,0.25)');
-        gloss.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-        gloss.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = gloss;
-        ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = atm;
+            ctx.fillRect(0, 0, W, H * 0.15);
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-        ctx.lineWidth = 0.8;
-        for (let i = 0; i <= 12; i++) {
-            const lx = (W / 12) * i;
-            ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
-        }
-        for (let i = 0; i <= 8; i++) {
-            const ly = (H / 8) * i;
-            ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(W, ly); ctx.stroke();
-        }
+            globalOffset -= 0.6;
+            if (globalOffset <= -W) globalOffset = 0;
+
+            const time = Date.now() * 0.001;
+            const wobbleAngle = Math.sin(time) * 0.02;
+
+            ctx.save();
+            ctx.translate(W / 2 + mouseRef.current.x * 20, H / 2 + mouseRef.current.y * 20);
+            ctx.rotate(wobbleAngle - 0.08);
+            ctx.translate(-W / 2, -H / 2);
+
+            ctx.save();
+            ctx.translate(globalOffset, 0);
+            drawAllIslands();
+            ctx.translate(W, 0);
+            drawAllIslands();
+            ctx.restore();
+
+            ctx.restore();
+
+            ctx.fillStyle = gloss;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.save();
+            ctx.translate(mouseRef.current.x * 10, mouseRef.current.y * 10);
+            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i <= 12; i++) {
+                const lx = (W / 12) * i;
+                ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
+            }
+            for (let i = 0; i <= 8; i++) {
+                const ly = (H / 8) * i;
+                ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(W, ly); ctx.stroke();
+            }
+            ctx.restore();
+
+            animationFrameId = requestAnimationFrame(render);
+        };
+
+        render();
+
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+        };
     }, []);
 
     return (
-        <div className="relative w-full h-screen flex flex-col items-center bg-[#080f1a] font-sans overflow-hidden text-white">
+        <div 
+            className="relative w-full h-screen flex flex-col items-center justify-between bg-[#080f1a] font-sans overflow-hidden text-white"
+            onMouseMove={handleMouseMove}
+        >
             <div className="absolute inset-0 pointer-events-none" style={{
                 backgroundImage: `
                   radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.8) 0%, transparent 100%),
@@ -128,49 +165,44 @@ export default function Home() {
                   radial-gradient(1px 1px at 80% 28%, rgba(255,255,255,0.5) 0%, transparent 100%),
                   radial-gradient(1px 1px at 45% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
                   radial-gradient(1px 1px at 5% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
-                  radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                  radial-gradient(1px 1px at 55% 42%, rgba(255,255,255,0.3) 0%, transparent 100%),
-                  radial-gradient(1px 1px at 35% 88%, rgba(255,255,255,0.4) 0%, transparent 100%),
-                  radial-gradient(1px 1px at 72% 70%, rgba(255,255,255,0.35) 0%, transparent 100%)
+                  radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5) 0%, transparent 100%)
                 `
             }} />
 
-            <header className="relative z-20 w-full flex flex-col items-center pt-12 md:pt-16 px-4 text-center">
-                <div className="absolute right-6 top-6 md:right-10 md:top-10">
+            <header className="relative z-20 w-full flex flex-col items-center pt-8 md:pt-16 px-6 text-center">
+                <div className="absolute right-4 top-4 md:right-10 md:top-10">
                     <ProfileDropdown />
                 </div>
 
                 <h1
-                    className="text-5xl md:text-7xl font-black tracking-[0.22em] uppercase text-white"
+                    className="text-3xl sm:text-5xl md:text-7xl font-black uppercase text-white select-none
+                               tracking-[0.1em] sm:tracking-[0.22em]"
                     style={{ textShadow: '0 0 40px rgba(79,195,247,0.4), 0 2px 4px rgba(0,0,0,0.8)' }}
                 >
                     GeoGuessr
                 </h1>
                 <div
-                    className="w-16 h-[3px] bg-cyan-400 mx-auto mt-4 rounded-full"
+                    className="w-12 md:w-16 h-[3px] bg-cyan-400 mx-auto mt-3 md:mt-4 rounded-full"
                     style={{ boxShadow: '0 0 14px #00e5ff' }}
                 />
-                <p className="mt-4 text-gray-400 text-[11px] md:text-xs tracking-[0.18em] uppercase font-medium max-w-xs opacity-75">
+                <p className="mt-3 md:mt-4 text-gray-400 text-[10px] md:text-xs tracking-[0.15em] sm:tracking-[0.18em] uppercase font-medium max-w-xs opacity-75 select-none">
                     A geography game which takes you on a journey around the world.
                 </p>
             </header>
 
             <div
-                className="absolute z-10"
+                className="absolute left-1/2 -translate-x-1/2 bottom-0 rounded-full overflow-hidden z-10 transition-all duration-300
+                           w-[220vw] h-[220vw] translate-y-[86%]
+                           sm:w-[160vw] sm:h-[160vw] sm:translate-y-[82%]
+                           md:w-[120vw] md:h-[120vw] md:translate-y-[76%]
+                           lg:w-[90vw] lg:h-[90vw] lg:translate-y-[70%]"
                 style={{
-                    width: '130vw',
-                    height: '135vw',
-                    bottom: '-105vw',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    borderRadius: '50%',
-                    overflow: 'hidden',
                     boxShadow: `
-            inset 0 30px 60px rgba(255,255,255,0.25),
-            inset 0 -20px 40px rgba(0,0,100,0.4),
-            0 0 80px rgba(0,200,255,0.35),
-            0 0 0 2px rgba(255,255,255,0.12)
-          `,
+                        inset 0 30px 60px rgba(255,255,255,0.25),
+                        inset 0 -20px 40px rgba(0,0,100,0.4),
+                        0 0 80px rgba(0,200,255,0.35),
+                        0 0 0 2px rgba(255,255,255,0.12)
+                    `,
                 }}
             >
                 <div
@@ -196,47 +228,40 @@ export default function Home() {
                 />
             </div>
 
-            <div
-                className="absolute z-30 flex flex-col items-center gap-3"
-                style={{
-                    bottom: '22%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '100%',
-                    paddingInline: '1.5rem',
-                }}
-            >
-                <p
-                    className="text-xs font-bold tracking-[0.2em] uppercase text-white/80 mb-1"
-                    style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}
-                >
-                    Choose game mode
-                </p>
-                <div className="flex gap-4 w-full max-w-sm">
-                    <button
-                        className="flex-1 py-3.5 px-4 rounded-xl font-bold text-sm transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
-                        style={{
-                            background: '#eef2f8',
-                            color: '#0d47a1',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-                        }}
-                        onClick={() => navigate("/single-game")}
+            <div className="absolute bottom-0 left-0 right-0 h-[15vh] bg-gradient-to-t from-[#080f1a]/80 to-transparent z-20 pointer-events-none" />
+
+            <div className="relative z-30 bottom-8 md:bottom-12 w-full max-w-md px-4 flex flex-col items-center">
+                <div className="w-full p-5 sm:p-6 rounded-2xl bg-[#080f1a]/60 border border-white/10 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4">
+                    <p 
+                        className="text-[11px] sm:text-xs font-bold tracking-[0.25em] uppercase text-cyan-400 text-center select-none"
+                        style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
                     >
-                        Single player
-                    </button>
-                    <button
-                        className="flex-1 py-3.5 px-4 rounded-xl font-bold text-sm transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
-                        style={{
-                            background: 'rgba(8,15,26,0.85)',
-                            color: '#fff',
-                            border: '1px solid rgba(255,255,255,0.18)',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-                            backdropFilter: 'blur(4px)',
-                        }}
-                        onClick={() => navigate("/multiplayer")}
-                    >
-                        Multiplayer
-                    </button>
+                        Choose game mode
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full">
+                        <button
+                            className="w-full sm:flex-1 py-3.5 px-4 rounded-xl font-bold text-sm transition-all duration-150 hover:scale-[1.03] active:scale-[0.98]"
+                            style={{
+                                background: '#eef2f8',
+                                color: '#0d47a1',
+                                boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
+                            }}
+                            onClick={() => navigate("/single-game")}
+                        >
+                            Single player
+                        </button>
+                        <button
+                            className="w-full sm:flex-1 py-3.5 px-4 rounded-xl font-bold text-sm transition-all duration-150 hover:scale-[1.03] active:scale-[0.98]"
+                            style={{
+                                background: 'rgba(255,255,255,0.06)',
+                                color: '#fff',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                            }}
+                            onClick={() => navigate("/multiplayer")}
+                        >
+                            Multiplayer
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
