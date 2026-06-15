@@ -4,8 +4,12 @@ import { useLocation } from "react-router-dom";
 import Music1 from "../public/sound/music1.mp3";
 import Music2 from "../public/sound/music2.mp3";
 import Music3 from "../public/sound/music3.mp3";
+import Music4 from "../public/sound/music4.mp3";
+import Music5 from "../public/sound/music5.mp3";
+import Music6 from "../public/sound/music6.mp3";
+import Music7 from "../public/sound/music7.mp3";
 
-const PLAYLIST = [Music1, Music2, Music3];
+const PLAYLIST = [Music1, Music2, Music3, Music4, Music5, Music6, Music7];
 
 export function useAudioPlayer(isPlaying: boolean, volume: number) {
     const location = useLocation();
