@@ -40,8 +40,8 @@ class BaseConfig():
     MIN_PLAYERS = 2
     GAMEROOM_EXPIRY_TIME = 86400 # 24 hours
     # TODO: sync this config option with frontend
-    STARTING_PLAYER_HEALTH = 200
-    ROUND_HEALTH_MULTIPLIER = 0.5 # The damage equals to score_diff * round * this multiplier
+    STARTING_PLAYER_HEALTH = 1000
+    ROUND_HEALTH_MULTIPLIER = 1.1 # The damage equals to score_diff * round * this multiplier
     GAME_PLAYERCOUNT = (2, 4)
     GAME_TEAMS = {
         0: 'red',

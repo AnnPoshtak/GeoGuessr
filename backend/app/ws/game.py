@@ -47,6 +47,7 @@ class GameNamespace(Namespace):
             t['players'] = players
             teams.append(t)
         game['round'] = int(game['round'])
+        game['multiplier'] = int(game['round']) * current_app.config['ROUND_HEALTH_MULTIPLIER']
         game['location'] = json.loads(game['location'])
         return {
             'game': game

@@ -118,7 +118,6 @@ const GameContent = () => {
         queryFn: async () => {
             console.log('Fetching game...');
             const data = await fetchGame();
-            console.log(data);
             setTeams(initTeams(data.teams));
             if (viewRef.current) {
                 viewRef.current.setPov({
@@ -193,6 +192,11 @@ const GameContent = () => {
     return (
         <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
             <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-4 md:px-6">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-20 bg-neutral-800/80 text-white text-center rounded-b-[50%_100%] shadow-lg">
+                    <p>Round:</p>
+                    <h2 className="text-2xl">{game?.round}</h2>
+                    <p>x{game?.multiplier}</p>
+                </div>
                 <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
                     {teams.map((t, index) => (
                         <TeamBar key={index} rtl={index % 2 !== 0} team={t} />

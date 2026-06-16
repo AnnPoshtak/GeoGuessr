@@ -4,11 +4,7 @@ import { gameRoom } from "./wsClient";
 const fetchGame = () => {
     return new Promise<GameRoom>((resolve, reject) => gameRoom.emit('fetch_game', (data: Record<'game', GameRoom>) => {
         if (data) {
-            const game: GameRoom = {
-                location: data.game.location,
-                round: data.game.round,
-                teams: data.game.teams,
-            }
+            const game: GameRoom = data.game;
             resolve(game);
         } else {
             reject();
