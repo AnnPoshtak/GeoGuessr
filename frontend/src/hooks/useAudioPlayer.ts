@@ -14,7 +14,41 @@ const PLAYLIST = [Music1, Music2, Music3, Music4, Music5, Music6, Music7];
 export function useAudioPlayer(isPlaying: boolean, volume: number) {
     const location = useLocation();
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [currentTrack, setCurrentTrack] = useState(() => PLAYLIST[Math.floor(Math.random() * PLAYLIST.length)]);
+
+    const getTargetVolume = () => {
+        const isInGame = location.pathname === "/single-game" || location.pathname === "/multiplayer-game";
+        return isInGame ? volume * 0.15 : volume;
+    };
+
+    const fadeOutAndAction = (action: () => void) => {
+        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+        if (!audioRef.current || audioRef.current.paused) {
+            action();
+            return;
+        }
+
+        const startVolume = audioRef.current.volume;
+        const fadeDuration = 800; 
+        const intervalTime = 50;
+        const steps = fadeDuration / intervalTime;
+        const volumeStep = startVolume / steps;
+
+        fadeIntervalRef.current = setInterval(() => {
+            if (!audioRef.current) {
+                if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+                return;
+            }
+
+            if (audioRef.current.volume > volumeStep) {
+                audioRef.current.volume -= volumeStep;
+            } else {
+                clearInterval(fadeIntervalRef.current!);
+                action();
+            }
+        }, intervalTime);
+    };
 
     useEffect(() => {
         audioRef.current = new Audio(currentTrack);
@@ -27,6 +61,7 @@ export function useAudioPlayer(isPlaying: boolean, volume: number) {
         audioRef.current.addEventListener("ended", handleEnded);
 
         return () => {
+            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.removeEventListener("ended", handleEnded);
@@ -36,30 +71,39 @@ export function useAudioPlayer(isPlaying: boolean, volume: number) {
 
     useEffect(() => {
         if (!audioRef.current) return;
+        
+        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
         audioRef.current.src = currentTrack;
+        audioRef.current.volume = getTargetVolume();
+
         if (isPlaying) {
             audioRef.current.play().catch(() => console.log("Чекаємо на взаємодію..."));
         }
     }, [currentTrack]);
 
     useEffect(() => {
-        if (!audioRef.current) return;
-        const isInGame = location.pathname === "/single-game" || location.pathname === "/multiplayer-game";
-        audioRef.current.volume = isInGame ? volume * 0.15 : volume;
+        if (!audioRef.current || fadeIntervalRef.current) return;
+        audioRef.current.volume = getTargetVolume();
     }, [location.pathname, volume]);
 
     useEffect(() => {
         if (!audioRef.current) return;
+
         if (isPlaying) {
+            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+            audioRef.current.volume = getTargetVolume();
             audioRef.current.play().catch(() => {});
         } else {
-            audioRef.current.pause();
+            fadeOutAndAction(() => {
+                audioRef.current?.pause();
+            });
         }
     }, [isPlaying]);
 
     useEffect(() => {
         const unlockAudio = () => {
             if (isPlaying && audioRef.current && audioRef.current.paused) {
+                audioRef.current.volume = getTargetVolume();
                 audioRef.current.play().catch(() => {});
             }
             window.removeEventListener("click", unlockAudio);
