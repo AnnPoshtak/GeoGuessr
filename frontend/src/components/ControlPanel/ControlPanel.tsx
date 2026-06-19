@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { User, ChevronDown, LogOut, LogIn } from 'lucide-react';
 import { usersApi, authApi } from '@/api';
+import VolumeControl from '../VolumeControl/VolumeControl';
 
-export const ProfileDropdown = () => {
+export const Dropdown = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -83,6 +84,13 @@ export const ProfileDropdown = () => {
               
               <div className="h-[1px] bg-white/10 my-3" />
               
+              <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                Music settings
+              </div>
+              <VolumeControl />
+
+              <div className="h-[1px] bg-white/10 my-3" />
+
               <button 
                 onClick={handleLogout}
                 className="flex items-center justify-center gap-2 w-full p-2.5 text-xs font-semibold tracking-wider uppercase text-red-400 border border-red-500/20 bg-red-500/5 rounded-lg cursor-pointer transition-all duration-200 hover:bg-red-500/15 hover:border-red-500/40"
