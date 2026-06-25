@@ -3,9 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path';
 import { defineConfig as defineVitestConfig } from 'vitest/config';
-import { playwright } from '@vitest/browser-playwright';
 
-// https://vite.dev/config/
 const viteConf = defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -17,16 +15,10 @@ const viteConf = defineConfig({
 
 const vitestConf = defineVitestConfig({
   test: {
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      instances: [
-        { browser: 'chromium' }
-      ]
-    },
-    testTimeout: 2000,
-    setupFiles: ['./vitest.setup.ts']
-  }
+    globals: true, 
+    environment: 'jsdom',         
+    setupFiles: ['./vitest.setup.ts'], 
+  },
 });
 
 export default mergeConfig(viteConf, vitestConf);
