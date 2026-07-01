@@ -7,8 +7,6 @@ export interface User {
 
 export interface Player extends User {
     guess: MapLocation,
-}
-
-export interface TeamPlayer extends Player {
     isConnected: boolean;
 }
+

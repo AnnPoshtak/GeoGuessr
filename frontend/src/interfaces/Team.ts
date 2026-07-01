@@ -1,7 +1,8 @@
-import type { Player, TeamPlayer } from "./Player";
+import type { Player } from "./Player";
 
 export interface Team {
-    players: TeamPlayer[],
+    name: string,
+    players: Player[],
     health: number,
     score: number,
     distance: number,

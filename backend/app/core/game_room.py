@@ -1,9 +1,10 @@
 import uuid
 from flask import current_app
-from .util import get_random_location
+from .util import get_random_location, calculate_line_distance, calculate_score
 import json
 from redis import Redis
 from .redis_repository import RedisRepository
+from typing import Any
 
 class GameRoomRepository(RedisRepository):
     '''
@@ -56,11 +57,6 @@ class GameRoomRepository(RedisRepository):
         pipe = self.redis.pipeline()
         for p in players:
             self.join_game(p['id'], game_id)
-            pl_dict = {
-                'id': p['id'],
-                'guess': json.dumps(None),
-                'team': p['team']
-            }
             team_key = f"{game_key}:teams:{p['team']}"
             if not p['team'] in game_mapping['teams']:
                 game_mapping['teams'].append(p['team'])
@@ -73,12 +69,19 @@ class GameRoomRepository(RedisRepository):
                 t_players = []
             t_players.append(p['id'])
             t_health = STARTING_HEALTH // len(t_players)
-            pipe.hset(team_key, 'players', json.dumps(t_players))
-            pipe.hset(team_key, 'name', p['team'])
-            pipe.hset(team_key, 'health', t_health)
-            pipe.hset(team_key, 'score', 0)
-            pipe.hset(team_key, 'distance', 0)
-            pipe.hset(player_key, mapping=pl_dict)
+            pipe.hset(team_key, mapping={
+                'players': json.dumps(t_players),
+                'name': p['team'],
+                'health': t_health,
+                'score': 0,
+                'distance': 0
+            })
+            pipe.hset(player_key, mapping={
+                'id': p['id'],
+                'guess': json.dumps(None),
+                'team': p['team'],
+                'is_connected': json.dumps(True),
+            })
             pipe.expire(player_key, EXPIRY_TIME)
             pipe.expire(team_key, EXPIRY_TIME)
 
@@ -95,6 +98,47 @@ class GameRoomRepository(RedisRepository):
     def get_player(self, game_id: str, player_id: int) -> dict:
         return self.redis.hgetall(f'{game_id}:players:{player_id}')
     
+    def set_player_key(self, game_id: str, player_id: int, key: str, value: Any) -> Any:
+        self.redis.hset(f'{game_id}:players:{player_id}', key, json.dumps(value))
+        self.update_game_expiry(game_id)
+        return value
+    
+    def set_team_key(self, game_id: str, team_name: str, key: str, value: Any) -> Any:
+        self.redis.hset(f'{game_id}:teams:{team_name}', key, json.dumps(value))
+        self.update_game_expiry(game_id)
+        return value
+    
+    def get_team_average_score(self, game_key: str, team_name: str):
+        scores = []
+        team = self.get_team(game_key, team_name)
+        team['players'] = json.loads(team['players'])
+        game = self.get_game(game_key)
+        for p in team['players']:
+            player = self.get_player(game_key, p)
+            player['guess'] = json.loads(player['guess'])
+            if not player['guess']:
+                continue
+            player['id'] = json.loads(player['id'])
+            distance = calculate_line_distance(json.loads(game['location']), player['guess'])
+            score = calculate_score(distance)
+            scores.append(score)
+        avg_score = sum(scores) // (len(scores) or 1)
+        return avg_score
+
+    def get_winning_team(self, game_key: str) -> dict:
+        teams = self.get_teams(game_key)
+        
+        winning_team = None
+        highest_score = float('-inf')
+
+        for team in teams:
+            avg_score = self.get_team_average_score(game_key, team['name'])
+            if avg_score > highest_score:
+                highest_score = avg_score
+                winning_team = team
+                
+        return winning_team
+    
     def get_team(self, game_id: str, team_name: str) -> dict:
         return self.redis.hgetall(f'{game_id}:teams:{team_name}')
     
@@ -104,6 +148,12 @@ class GameRoomRepository(RedisRepository):
         for t in json.loads(game['teams']):
             t = self.get_team(game_id, t)
             t['players'] = json.loads(t['players'])
+            for i in range(len(t['players'])):
+                t['players'][i] = self.get_player(game_id, t['players'][i])
+                t['players'][i]['guess'] = json.loads(t['players'][i]['guess'])
+                if not t['players'][i]['guess']:
+                    continue
+                t['players'][i]['id'] = json.loads(t['players'][i]['id'])
             t['health'] = json.loads(t['health'])
             t['score'] = json.loads(t['score'])
             t['distance'] = json.loads(t['distance'])
@@ -171,6 +221,7 @@ class GameRoomRepository(RedisRepository):
         '''
         self.redis.hset(f'{game_id}:teams:{team_name}', 'health', health)
         self.update_game_expiry(game_id)
+        return health
     
     def move_next_round(self, game_id: str) -> int:
         '''

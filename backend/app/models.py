@@ -1,4 +1,4 @@
-from app import db
+from app.extensions import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func, ForeignKey
 import datetime

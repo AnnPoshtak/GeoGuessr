@@ -1,25 +1,10 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from flask_migrate import Migrate
-from flask_login import LoginManager
-from flask_marshmallow import Marshmallow
 from app.config import DevelopmentConfig
-from authlib.integrations.flask_client import OAuth
-from flask_session import Session
-from flask_socketio import SocketIO
+from app.extensions import cors, db, migrate, login_manager, ma, oauth, server_session, socketio, scheduler
 import os
 from redis import Redis
 from app.core import GameQueueRepository, GameRoomRepository
 
-cors = CORS()
-db = SQLAlchemy()
-migrate = Migrate()
-login_manager = LoginManager()
-ma = Marshmallow()
-oauth = OAuth()
-server_session = Session()
-socketio = SocketIO()
 session_redis = Redis.from_url(os.environ['REDIS_URL'])
 app_redis = Redis.from_url(os.environ['REDIS_URL'], decode_responses=True) 
 game_queue = GameQueueRepository(app_redis)
@@ -50,6 +35,14 @@ def create_app(config=DevelopmentConfig) -> Flask:
     socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], 
                       logger=True, async_mode=os.environ.get('SOCKETIO_ASYNC_MODE', 'threading'),
                       manage_session=False)
+    
+    from redis import ConnectionPool
+    from apscheduler.jobstores.redis import RedisJobStore
+    pool = ConnectionPool.from_url(os.environ['REDIS_URL'])
+    app.config['SCHEDULER_JOBSTORES'] = {
+        'default': RedisJobStore(jobs_key='scheduler_jobs', run_times_key='scheduler_run_times', connection_pool=pool)
+    }
+    scheduler.init_app(app)
 
     for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
         oauth.register(
@@ -69,6 +62,7 @@ def create_app(config=DevelopmentConfig) -> Flask:
     with app.app_context():
         db.create_all()
         from .blueprints import oauth_bp, users_bp, auth_bp, game_bp
+        scheduler.start()
         app.register_blueprint(oauth_bp, url_prefix='/oauth')
         app.register_blueprint(users_bp, url_prefix='/users')
         app.register_blueprint(auth_bp, url_prefix='/auth')

@@ -1,16 +1,30 @@
 import config from "@/config";
-import type { TeamPlayer } from "@/interfaces/Player";
+import type { Player } from "@/interfaces/Player";
 import type { Team } from "@/interfaces/Team";
+import { useEffect, useState } from "react";
 import { RiSignalWifiErrorLine, RiUser2Fill } from "react-icons/ri";
 
 interface TeamBarProps {
     team: Team;
     rtl: boolean;
+    defeatTeamName: string | null;
 }
 
-const TeamBar = ({ team, rtl }: TeamBarProps) => {
+const TeamBar = ({ team, rtl, defeatTeamName }: TeamBarProps) => {
     const maxHealth = config.startingPlayerHealth * team.players.length;
     const healthPercentage = Math.max(0, Math.min(100, (team.health / maxHealth) * 100));
+    const [seconds, setSeconds] = useState(config.defeatTeamInterval);
+
+    useEffect(() => {
+        if (!defeatTeamName) return;
+        if (seconds <= 0) return;
+        const interval = setInterval(() => {
+            setSeconds((p) => p -= 1);
+        }, 1000);
+        return () => {
+            clearInterval(interval)
+        }
+    }, [defeatTeamName, seconds]);
 
     return (
         <div 
@@ -73,6 +87,9 @@ const TeamBar = ({ team, rtl }: TeamBarProps) => {
                     />
                 </div>
             </div>
+            {defeatTeamName == team.name && <div className={seconds <= 3 ? 'text-2xl text-red-500': ''}>
+                Defeat in {seconds}
+            </div>}
         </div>
     );
 };

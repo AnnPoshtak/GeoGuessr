@@ -4,6 +4,10 @@ from flask_socketio import disconnect, emit, join_room
 from app import game_room
 from app.schemas import user_public_schema, full_player_data_schema
 from app.models import UserModel
+from app.core.scheduler import scheduler
+import json
+from apscheduler.jobstores.base import JobLookupError
+from flask import current_app
 
 def authenticated_only(f):
     @functools.wraps(f)
@@ -28,12 +32,21 @@ def join_game_currently_in() -> bool:
     game_key = game_room.get_current_game(current_user.id)
     if game_key:
         join_game(current_user.id, game_key)
-        emit(
-            'player_reconnected', 
-            user_public_schema.dump(current_user),
-            broadcast=True,
-            to=game_key
-        )
+        player = game_room.get_player(game_key, current_user.id)
+        try:
+            scheduler.remove_job(f"record_technical_defeat:{current_user.id}:{player['team']}")
+            emit(
+                'record_defeat_cancelled',
+                broadcast=True,
+                to=game_key
+            )
+        except JobLookupError:
+            pass
+        try:
+            scheduler.remove_job(f'send_disconnect_event:{current_user.id}')
+        except JobLookupError:
+            pass
+        game_room.set_player_key(game_key, current_user.id, 'is_connected', True)
         return True
     return False
 

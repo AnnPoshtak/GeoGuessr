@@ -47,6 +47,8 @@ class BaseConfig():
         0: 'red',
         1: 'blue'
     }
+    DEFEAT_TEAM_INTERVAL = 5
+    DISCONNECT_EVENT_INTERVAL = 3
     
     REDIS_URL = os.environ['REDIS_URL']
 

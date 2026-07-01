@@ -26,6 +26,7 @@ interface GameState {
     isEnded: boolean;
     winner: Record<string, string> | null;
     roundData: RoundData | null;
+    defeatTeamName: string | null;
 }
 
 interface EndGameData extends RoundData {
@@ -64,6 +65,7 @@ const GameContent = () => {
         isEnded: false,
         winner: null,
         roundData: null,
+        defeatTeamName: null,
     });
 
     useEffect(() => {
@@ -91,6 +93,19 @@ const GameContent = () => {
             toast.info(`Player ${data.username} has disconnected from the game!`);
         });
 
+        gameRoom.on('record_defeat_started', (data) => {
+            setGameState((p) => ({
+                ...p,
+                defeatTeamName: data.team,
+            }));
+        });
+        gameRoom.on('record_defeat_cancelled', () => {
+            setGameState((p) => ({
+                ...p,
+                defeatTeamName: null,
+            }));
+        });
+
         gameRoom.on('game_end', gameEndCallback);
         gameQueue.on('game_end', gameEndCallback);
 
@@ -101,6 +116,9 @@ const GameContent = () => {
 
             gameRoom.off('player_reconnected');
             gameRoom.off('player_disconnected');
+
+            gameQueue.off('record_defeat_started');
+            gameQueue.off('record_defeat_cancelled');
 
             gameQueue.off('new_round');
             gameQueue.off('game_end');
@@ -145,11 +163,11 @@ const GameContent = () => {
         setTeams(initTeams(data.teams));
         data.teams.forEach((t) => {
             for (let pl of t.players) {
+                if (!pl.guess) continue;
                 setAllGuesses(p => [...p, pl.guess]);
                 bounds.extend(pl.guess);
             }
         });
-
         bounds.extend(data.target);
 
         setRoundData(data);
@@ -171,6 +189,7 @@ const GameContent = () => {
     };
 
     const gameEndCallback = (data: EndGameData) => {
+        console.log('awdawdaw')
         handleNewRound(data);
         setGameState(p => ({
             ...p,
@@ -199,7 +218,7 @@ const GameContent = () => {
                 </div>
                 <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
                     {teams.map((t, index) => (
-                        <TeamBar key={index} rtl={index % 2 !== 0} team={t} />
+                        <TeamBar key={index} rtl={index % 2 !== 0} team={t} defeatTeamName={gameState.defeatTeamName} />
                     ))}
                 </div>
             </div>
