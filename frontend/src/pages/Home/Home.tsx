@@ -1,13 +1,13 @@
-import { ProfileDropdown } from '@/components/Profile/Profile';
+import { Dropdown } from '@/components/ControlPanel/ControlPanel';
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
     const navigate = useNavigate();
-    const canvasRef = useRef(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: React.MouseEvent) => {
         const { innerWidth, innerHeight } = window;
         mouseRef.current.targetX = (e.clientX / innerWidth - 0.5) * 2;
         mouseRef.current.targetY = (e.clientY / innerHeight - 0.5) * 2;
@@ -21,11 +21,11 @@ export default function Home() {
         const W = canvas.width;
         const H = canvas.height;
 
-        let animationFrameId;
+        let animationFrameId: number;
         let globalOffset = 0;
 
-        const x = (v) => v * W;
-        const y = (v) => v * H;
+        const x = (v: number) => v * W;
+        const y = (v: number) => v * H;
 
         const ocean = ctx.createLinearGradient(0, 0, 0, H);
         ocean.addColorStop(0, '#5bc8f5');
@@ -41,7 +41,7 @@ export default function Home() {
         gloss.addColorStop(0.5, 'rgba(255,255,255,0.05)');
         gloss.addColorStop(1, 'rgba(0,0,0,0)');
 
-        function land(points, color = '#2d7a4f', shadow = '#1a5c35') {
+        function land(points: number[][], color = '#2d7a4f', shadow = '#1a5c35') {
             if (points.length < 2) return;
 
             ctx.beginPath();
@@ -171,7 +171,7 @@ export default function Home() {
 
             <header className="relative z-20 w-full flex flex-col items-center pt-8 md:pt-16 px-6 text-center">
                 <div className="absolute right-4 top-4 md:right-10 md:top-10">
-                    <ProfileDropdown />
+                    <Dropdown />
                 </div>
 
                 <h1

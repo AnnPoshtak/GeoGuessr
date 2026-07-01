@@ -3,7 +3,6 @@ import queryClient from "@/api/queryClient";
 import Distance from "@/components/Distance/Distance";
 import GameUI from "@/components/GameUI/GameUI.tsx";
 import GuessMarker from "@/components/GuessMarker/GuessMarker";
-import { GuessOverlay } from "@/components/GuessOverlay";
 import LocationSelectMap from "@/components/LocationSelectMap/LocationSelectMap";
 import StreetView from "@/components/StreetView/StreetView.tsx";
 import TargetMarker from "@/components/TargetMarker/TargetMarker";
@@ -19,7 +18,6 @@ function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const navigate = useNavigate();
     const [isEnded, setIsEnded] = useState(false);
-    const [showOverlay, setShowOverlay] = useState(false);
 
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],
@@ -55,10 +53,6 @@ function SinglePlayer() {
 
     useEffect(() => {
         setIsSubmitted(!!guessSubmitResponse?.guess);
-
-        if (guessSubmitResponse) {
-            setShowOverlay(true);
-        }
     }, [guessSubmitResponse, setIsSubmitted]);
 
     const submitGuessMutation = useMutation({
@@ -91,11 +85,22 @@ function SinglePlayer() {
         });
         setGuessLocation(null);
         setGuessSubmitResponse(null);
-        setShowOverlay(false);
     };
 
     const leaveGame = () => {
         navigate('/');
+    };
+
+    const getDistanceLabel = (distanceInMeters: number) => {
+        const distanceKm = distanceInMeters / 1000;
+
+        if (distanceKm <= 100) {
+            return { text: "Excellent", className: "text-green-400" };
+        } else if (distanceKm > 100 && distanceKm <= 600) {
+            return { text: "Good", className: "text-yellow-400" };
+        } else {
+            return { text: "Bad", className: "text-red-400" };
+        }
     };
 
     if (isPending) {
@@ -170,17 +175,23 @@ function SinglePlayer() {
                     />
 
                     {guessSubmitResponse && (
-                        <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[140px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
+                        <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[150px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
                             <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
                                 <RiPinDistanceFill size={18} className="animate-pulse" />
                                 <span>Result</span>
                             </div>
+                            
                             <div className="text-sm font-bold mt-1 text-neutral-50">
                                 {guessSubmitResponse.distance > 1000
                                     ? `${Math.floor(guessSubmitResponse.distance / 1000)} km`
                                     : `${Math.floor(guessSubmitResponse.distance)} m`}
                             </div>
-                            <div className="text-[11px] text-gray-400 font-medium tracking-wide">
+
+                            <div className={`text-xs font-black uppercase tracking-wide mt-0.5 ${getDistanceLabel(guessSubmitResponse.distance).className}`}>
+                                {getDistanceLabel(guessSubmitResponse.distance).text}
+                            </div>
+
+                            <div className="text-[11px] text-gray-400 font-medium tracking-wide mt-0.5">
                                 {guessSubmitResponse.score} points
                             </div>
                         </div>
@@ -190,13 +201,6 @@ function SinglePlayer() {
                     {guessSubmitResponse && <TargetMarker position={guessSubmitResponse.target} />}
                 </LocationSelectMap>
             )}
-
-            {/* Guess result overlay with animations */}
-            <GuessOverlay
-                distanceKm={guessSubmitResponse ? guessSubmitResponse.distance / 1000 : null}
-                isVisible={showOverlay}
-                onComplete={() => setShowOverlay(false)}
-            />
 
             <GameUI />
         </div>
