@@ -18,7 +18,7 @@ services:
       - geoguessr-network
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     ports:
       - "6379:6379"
     networks:
@@ -42,6 +42,8 @@ services:
       - "8000:5000"                      
     networks:
       - geoguessr-network
+    volumes:
+      - ./shared:/app/shared
 
   frontend:
     build:
@@ -58,6 +60,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app/frontend
+      - ./shared:/app/shared 
     networks:
       - geoguessr-network
 

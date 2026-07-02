@@ -20,4 +20,6 @@ WORKDIR /app/backend
 
 EXPOSE 5000
 
+CMD ["alemic", "upgrade", "head"]
+
 CMD ["python", "wsgi.py"]
