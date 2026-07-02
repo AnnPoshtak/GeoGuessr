@@ -1,6 +1,7 @@
 from flask_socketio import Namespace, emit, send
-from flask import session, current_app
+from flask import session
 from app import game_room
+from app.config import settings
 from app.core.util import calculate_line_distance, calculate_score
 from .util import join_game, authenticated_only, join_game_currently_in, get_full_player_data
 import json
@@ -45,7 +46,7 @@ class GameNamespace(Namespace):
             t['players'] = players
             teams.append(t)
         game['round'] = int(game['round'])
-        game['multiplier'] = round(int(game['round']) * current_app.config['ROUND_HEALTH_MULTIPLIER'], 1)
+        game['multiplier'] = round(int(game['round']) * settings.round_health_multiplier, 1)
         game['location'] = json.loads(game['location'])
         return {
             'game': game
@@ -85,7 +86,7 @@ class GameNamespace(Namespace):
                 score_diff = best_score - team_scores[i]
                 health = int(t['health'])
                 if t['name'] != winning_team:
-                    health -= round(score_diff * (int(game['round']) * current_app.config['ROUND_HEALTH_MULTIPLIER']))
+                    health -= round(score_diff * (int(game['round']) * settings.round_health_multiplier))
                     health = max(0, health)
                     t['health'] = health
                     game_room.set_team_health(game_key, t['name'], health)

@@ -1,5 +1,5 @@
 from app.core.util import validate_player_count
-from flask import current_app
+from app.config import settings
 import random
 import numpy as np
 from redis import Redis
@@ -47,8 +47,7 @@ class GameQueueRepository(RedisRepository):
     def get_all_queue_keys(self, ) -> list[str]:
         '''Returns all queues'''
         res = []
-        with current_app.app_context():
-            player_count = current_app.config['GAME_PLAYERCOUNT']
+        player_count = settings.game_playercount
         for p_c in player_count:
             res.append(self.get_queue_key(p_c))
         
@@ -65,7 +64,7 @@ class GameQueueRepository(RedisRepository):
         :param player_id: player to join the queue
         :type player_id: int
         :param player_count: used to specify which queue to join. For example, 2 means join 1 vs 1 queue, 4 means 2 vs 2 and so on.
-        Has to be in `app.config['GAME_PLAYERCOUNT']`
+        Has to be in `settings.game_playercount`
         :type player_count: int
         '''
         validate_player_count(player_count)
@@ -129,8 +128,7 @@ class GameQueueRepository(RedisRepository):
         if teams and len(teams) < 2:
             raise ValueError('At least two teams have to be provided!')
         
-        with current_app.app_context():
-            TEAMS = teams or current_app.config['GAME_TEAMS']
+        TEAMS = teams or settings.game_teams
         players = self.form_teams(players, TEAMS)
         from app import game_room
         game_id = game_room.create_game(players)

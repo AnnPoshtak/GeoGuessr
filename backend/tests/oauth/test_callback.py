@@ -3,6 +3,7 @@ from flask import url_for
 from flask_login import login_user, current_user
 from app.factories import UserFactory, UserModel
 from app import oauth
+from app.config import settings
 
 def test_callback_wrong_provider(client):
     resp = client.get(url_for('oauth.oauth_callback', provider='gitlab'))
@@ -35,6 +36,6 @@ def test_callback_create_user(client, app, mocker):
     with app.test_request_context():
         resp = client.get(url_for('oauth.oauth_callback', provider='google'))
         assert resp.status_code == 302
-        assert app.config['FRONTEND_OAUTH_CALLBACK_URL'] in resp.location
+        assert settings.FRONTEND_OAUTH_CALLBACK_URL in resp.location
         assert UserModel.query.filter_by(username='johndoe@gmail.com').first()
         assert current_user.is_authenticated

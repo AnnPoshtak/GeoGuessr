@@ -1,5 +1,5 @@
 import uuid
-from flask import current_app
+from app.config import settings
 from .util import get_random_location, calculate_line_distance, calculate_score
 import json
 from redis import Redis
@@ -20,10 +20,9 @@ class GameRoomRepository(RedisRepository):
     def get_current_game(self, player_id: int) -> str | None:
         return self.redis.get(player_id)
     
-    def join_game(self, player_id: int, game_key: str) -> None:
-        with current_app.app_context():
-            EXPIRY_TIME = current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
-        self.redis.set(player_id, game_key)
+    def join_game(self, player_id: int, game_id: str) -> None:
+        EXPIRY_TIME = settings.gameroom_expiry_time
+        self.redis.set(player_id, game_id)
         self.redis.expire(player_id, EXPIRY_TIME)
 
     def create_game(self, players: list[dict]) -> str: 
@@ -35,10 +34,9 @@ class GameRoomRepository(RedisRepository):
         :return: A key to access the game in redis
         :rtype: str
         '''
-        with current_app.app_context():
-            EXPIRY_TIME = current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
-            MIN_PLAYERS = current_app.config.get('MIN_PLAYERS', 2)
-            STARTING_HEALTH = current_app.config.get('STARTING_PLAYER_HEALTH', 5000)
+        EXPIRY_TIME = settings.gameroom_expiry_time
+        MIN_PLAYERS = settings.min_players
+        STARTING_HEALTH = settings.starting_player_health
         if len(set([p['team'] for p in players])) < 2:
             raise ValueError('At least 2 teams must have at least one player!')
         if len(players) < MIN_PLAYERS:
@@ -57,11 +55,11 @@ class GameRoomRepository(RedisRepository):
         pipe = self.redis.pipeline()
         for p in players:
             self.join_game(p['id'], game_id)
-            team_key = f"{game_key}:teams:{p['team']}"
+            team_key = f"{game_id}:teams:{p['team']}"
             if not p['team'] in game_mapping['teams']:
                 game_mapping['teams'].append(p['team'])
             game_mapping['player_ids'].append(p['id'])
-            player_key = f'{game_key}:players:{p["id"]}'
+            player_key = f'{game_id}:players:{p["id"]}'
             t_players = self.redis.hget(team_key, 'players')
             if t_players:
                 t_players = json.loads(t_players)
@@ -87,10 +85,10 @@ class GameRoomRepository(RedisRepository):
 
         game_mapping['player_ids'] = json.dumps(game_mapping['player_ids'])
         game_mapping['teams'] = json.dumps(game_mapping['teams'])
-        pipe.hset(game_key, mapping=game_mapping)
-        pipe.expire(game_key, EXPIRY_TIME)
+        pipe.hset(game_id, mapping=game_mapping)
+        pipe.expire(game_id, EXPIRY_TIME)
         pipe.execute()
-        return game_key
+        return game_id
     
     def get_game(self, game_id: str) -> dict:
         return self.redis.hgetall(game_id)
@@ -108,13 +106,13 @@ class GameRoomRepository(RedisRepository):
         self.update_game_expiry(game_id)
         return value
     
-    def get_team_average_score(self, game_key: str, team_name: str):
+    def get_team_average_score(self, game_id: str, team_name: str):
         scores = []
-        team = self.get_team(game_key, team_name)
+        team = self.get_team(game_id, team_name)
         team['players'] = json.loads(team['players'])
-        game = self.get_game(game_key)
+        game = self.get_game(game_id)
         for p in team['players']:
-            player = self.get_player(game_key, p)
+            player = self.get_player(game_id, p)
             player['guess'] = json.loads(player['guess'])
             if not player['guess']:
                 continue
@@ -125,14 +123,14 @@ class GameRoomRepository(RedisRepository):
         avg_score = sum(scores) // (len(scores) or 1)
         return avg_score
 
-    def get_winning_team(self, game_key: str) -> dict:
-        teams = self.get_teams(game_key)
+    def get_winning_team(self, game_id: str) -> dict:
+        teams = self.get_teams(game_id)
         
         winning_team = None
         highest_score = float('-inf')
 
         for team in teams:
-            avg_score = self.get_team_average_score(game_key, team['name'])
+            avg_score = self.get_team_average_score(game_id, team['name'])
             if avg_score > highest_score:
                 highest_score = avg_score
                 winning_team = team
@@ -192,11 +190,10 @@ class GameRoomRepository(RedisRepository):
         
         :param game_id: redis game key
         :type game_id: str
-        :param expiry_time: expiry time. If not provided, `app.config['GAMEROOM_EXPIRY_TIME']` is used instead
+        :param expiry_time: expiry time. If not provided, `settings.gameroom_expiry_time` is used instead
         :type expiry_time: int
         '''
-        with current_app.app_context():
-            EXPIRY_TIME = expiry_time or current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
+        EXPIRY_TIME = expiry_time or settings.gameroom_expiry_time
         player_ids = self.get_player_ids(game_id)
         pipe = self.redis.pipeline()
         teams = json.loads(self.get_game(game_id)['teams'])

@@ -1,6 +1,7 @@
 import pytest
 import uuid
 from app import app_redis, game_room
+from app.config import settings
 import json
 
 def test_game_create(mocker, app):
@@ -27,7 +28,7 @@ def test_game_create(mocker, app):
     game = app_redis.hgetall(game_id)
     assert json.loads(game['location']) == loc
     assert game['id'] == game_uuid.hex
-    assert app_redis.ttl( game_id) == app.config['GAMEROOM_EXPIRY_TIME']
+    assert app_redis.ttl(game_id) == settings.gameroom_expiry_time
 
 def test_game_create_not_enough_players():
     players = [
@@ -57,7 +58,7 @@ def test_set_team_health(test_game_room, app):
     game_id = f"gameroom:{test_game_room['id']}"
     h = app_redis.hget(f"{game_id}:teams:red", 'health')
     with app.app_context():
-        assert int(h) == app.config['STARTING_PLAYER_HEALTH']
+        assert int(h) == settings.starting_player_health
     game_room.set_team_health(game_id, 'red', 2000)
     h = app_redis.hget(f"{game_id}:teams:red", 'health')
     assert int(h) == 2000
@@ -95,8 +96,8 @@ def test_end_game(test_game_room, mocker):
 
 def test_update_game_expiry(test_game_room, app):
     game_id = f"gameroom:{test_game_room['id']}"
-    assert app_redis.ttl(game_id) == app.config['GAMEROOM_EXPIRY_TIME']
+    assert app_redis.ttl(game_id) == settings.gameroom_expiry_time
     app_redis.expire(game_id, 200)
     game_room.update_game_expiry(game_id)
     with app.app_context():
-        assert app_redis.ttl(game_id) == app.config['GAMEROOM_EXPIRY_TIME']
+        assert app_redis.ttl(game_id) == settings.gameroom_expiry_time

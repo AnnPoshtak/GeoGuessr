@@ -1,5 +1,5 @@
 from flask import Flask
-from app.config import DevelopmentConfig
+from app.config import DevelopmentConfig, settings, configure_settings
 from app.extensions import cors, db, migrate, login_manager, ma, oauth, server_session, socketio, scheduler
 import os
 from redis import Redis
@@ -19,23 +19,28 @@ def load_user(id):
 
 def create_app(config=DevelopmentConfig) -> Flask:
     app = Flask(__name__)
-    app.config.from_object(config())
+    configure_settings(config)
+
+    app.config['SECRET_KEY'] = settings.SECRET_KEY
+    app.config['SESSION_TYPE'] = settings.SESSION_TYPE
+    app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
+    app.config['SESSION_COOKIE_SAMESITE'] = settings.SESSION_COOKIE_SAMESITE
+    app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
     app.config.update({
         'SESSION_REDIS': session_redis
     })
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
+    cors.init_app(app, origins=settings.CORS_ORIGINS, supports_credentials=True)
     ma.init_app(app)
     login_manager.init_app(app)
     oauth.init_app(app)
     server_session.init_app(app)
-    # ! Remove logger=True in production
-    socketio.init_app(app, cors_allowed_origins=[os.environ['CORS_ORIGINS']], 
+    socketio.init_app(app, cors_allowed_origins=settings.CORS_ORIGINS,
                       logger=True, async_mode=os.environ.get('SOCKETIO_ASYNC_MODE', 'threading'),
                       manage_session=False)
-    
+
     from redis import ConnectionPool
     from apscheduler.jobstores.redis import RedisJobStore
     pool = ConnectionPool.from_url(os.environ['REDIS_URL'])
@@ -44,7 +49,7 @@ def create_app(config=DevelopmentConfig) -> Flask:
     }
     scheduler.init_app(app)
 
-    for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
+    for p_name, p_data in settings.OAUTH_PROVIDERS.items():
         oauth.register(
             p_name,
             client_id=p_data['client_id'],
@@ -67,6 +72,5 @@ def create_app(config=DevelopmentConfig) -> Flask:
         app.register_blueprint(users_bp, url_prefix='/users')
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(game_bp, url_prefix='/game')
-
 
     return app

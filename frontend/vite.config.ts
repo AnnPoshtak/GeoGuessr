@@ -3,12 +3,14 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path';
 import { defineConfig as defineVitestConfig } from 'vitest/config';
+import ViteYaml from '@modyfi/vite-plugin-yaml';
 
 const viteConf = defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), ViteYaml()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '#root': path.resolve(__dirname, '..'),
     },
   },
 });
