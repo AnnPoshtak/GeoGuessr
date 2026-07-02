@@ -70,7 +70,7 @@ def test_move_next_round(test_game_room, mocker):
         "lat": 12, 
         "lng": 15, 
     }
-    app_redis.json().set(f'{game_key}:players:{players[0]}', '$.guess', guess)
+    app_redis.json().set(f'{game_key}:players:{players[0]}', 'guess', guess)
     assert app_redis.json().get(game_key, 'round') == 1
     assert app_redis.json().get(game_key, 'location') == test_game_room['location']
     loc = {

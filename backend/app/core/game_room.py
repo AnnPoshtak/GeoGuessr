@@ -60,7 +60,7 @@ class GameRoomRepository(RedisRepository):
                 game_mapping['teams'].append(p['team'])
             game_mapping['player_ids'].append(p['id'])
             player_key = f'{game_key}:players:{p["id"]}'
-            t_players = self.redis.json().get(team_key, '$.players')
+            t_players = self.redis.json().get(team_key, 'players')
             if t_players is None:
                 t_players = []
             t_players.append(p['id'])
@@ -93,7 +93,7 @@ class GameRoomRepository(RedisRepository):
         return self.redis.json().get(f'{game_key}:players:{player_id}')
     
     def set_player_key(self, game_key: str, player_id: int, key: str, value: Any) -> Any:
-        self.redis.json().set(f'{game_key}:players:{player_id}', f'$.{key}', value)
+        self.redis.json().set(f'{game_key}:players:{player_id}', f'{key}', value)
         self.update_game_expiry(game_key)
         return value
     
@@ -155,11 +155,11 @@ class GameRoomRepository(RedisRepository):
                 return False
         return True
     
-    def submit_guess(self, game_key: str, player_id: int, guess: dict):
+    def set_guess(self, game_key: str, player_id: int, guess: dict):
         if not player_id in self.get_player_ids(game_key):
             raise ValueError(f'Player with id {player_id} does not belong to this game!')
         
-        self.redis.json().set(f'{game_key}:players:{player_id}', '$.guess', guess)
+        self.redis.json().set(f'{game_key}:players:{player_id}', 'guess', guess)
         self.update_game_expiry(game_key)
     
     def get_player_ids(self, game_key: str) -> list[int]:
@@ -213,14 +213,14 @@ class GameRoomRepository(RedisRepository):
     def move_next_round(self, game_key: str) -> int:
         '''
         Increments current round and selects a new location.
-        Also, it resets all submitted_guess values to `False`
+        Also, it resets all guesses values to `False`
         
         :param game_key: redis game key
         :type game_key: str
         :return: new game round
         :rtype: int
         '''
-        curr_round = int(self.redis.json().get(game_key, 'round'))
+        curr_round = self.redis.json().get(game_key, 'round')
         curr_round += 1
         new_location = get_random_location()
         self.redis.json().set(game_key, 'round', curr_round)

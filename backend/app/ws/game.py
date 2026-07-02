@@ -1,13 +1,9 @@
 from flask_socketio import Namespace, emit, send
-from flask import session
 from app import game_room
 from app.config import settings
-from app.core.util import calculate_line_distance, calculate_score
 from .util import join_game, authenticated_only, join_game_currently_in, get_full_player_data
-import json
 from flask_login import current_user
-from app.schemas import user_public_schema
-from app.core.scheduler import scheduler, record_technical_defeat, send_disconnect_event
+from app.core.scheduler import scheduler, send_disconnect_event
 import datetime
 
 class GameNamespace(Namespace):
@@ -35,8 +31,6 @@ class GameNamespace(Namespace):
         game_key = game_room.get_current_game(current_user.id)
         if not game_key:
             return send('You have to be part of the ongoing game')
-        # TODO: reset guess_submitted only when new_round event is emmitted
-        session['guess_submitted'] = False
         game = game_room.get_game(game_key)
         game['teams'] = game_room.get_teams(game_key)
         teams = []
@@ -63,13 +57,12 @@ class GameNamespace(Namespace):
         game_key = game_room.get_current_game(current_user.id)
         if not game_key:
             return send('You have to be part of the ongoing game')
-        # TODO: store guess_submitted in redis
-        if session.get('guess_submitted'):
+        player = game_room.get_player(game_key, current_user.id)
+        if player['guess'] and player['guess'] != 'null':
             return send('You have already submitted the guess')
         game = game_room.get_game(game_key)
         guess = data['guess']
-        game_room.submit_guess(game_key, current_user.id, guess)
-        session['guess_submitted'] = True
+        game_room.set_guess(game_key, current_user.id, guess)
 
         if game_room.all_players_submitted(game_key):
             target = game['location']
@@ -83,11 +76,10 @@ class GameNamespace(Namespace):
             best_score = max(team_scores)
             for i, t in enumerate(teams):
                 score_diff = best_score - team_scores[i]
-                health = int(t['health'])
+                health = t['health']
                 if t['name'] != winning_team:
                     health -= round(score_diff * (int(game['round']) * settings.round_health_multiplier))
                     health = max(0, health)
-                    t['health'] = health
                     game_room.set_team_health(game_key, t['name'], health)
                     if health <= 0:
                         emit('game_end', {
