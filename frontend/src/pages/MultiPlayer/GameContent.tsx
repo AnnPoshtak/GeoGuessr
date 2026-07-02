@@ -76,9 +76,31 @@ const GameContent = () => {
         };
     }, [gameState, navigate]);
 
-    const { guessLocation, map, setGuessLocation, setIsSubmitted } = useGameContext();
+    const { guessLocation, map, setGuessLocation, isSubmitted, setIsSubmitted } = useGameContext();
+
+    const totalPlayersCount = teams.length;
+    const submittedPlayersCount = teams.filter(t => 
+        t.players.some(p => p.guess && typeof p.guess === 'object' && 'lat' in p.guess)
+    ).length;
+
+    const isAllReady = submittedPlayersCount === totalPlayersCount && totalPlayersCount > 0;
+
+    function messageCallback(message: string) {
+        toast.error(message);
+    }
+
+    async function newRoundCallback(data: RoundData) {
+        handleNewRound(data);
+    }
+
+    function gameEndCallback(data: EndGameData) {
+        handleNewRound(data);
+        setGameState(p => ({ ...p, isEnded: true, winner: data.winner }));
+    }
 
     useEffect(() => {
+        if (!isJoined) return;
+
         gameRoom.on('message', messageCallback);
         gameRoom.on('new_round', newRoundCallback);
         gameQueue.on('new_round', newRoundCallback);
@@ -113,13 +135,10 @@ const GameContent = () => {
             gameRoom.off('new_round');
             gameRoom.off('game_end');
             gameRoom.off('message');
-
             gameRoom.off('player_reconnected');
             gameRoom.off('player_disconnected');
-
             gameQueue.off('record_defeat_started');
             gameQueue.off('record_defeat_cancelled');
-
             gameQueue.off('new_round');
             gameQueue.off('game_end');
         };
@@ -138,14 +157,8 @@ const GameContent = () => {
             const data = await fetchGame();
             setTeams(initTeams(data.teams));
             if (viewRef.current) {
-                viewRef.current.setPov({
-                    heading: data.location.heading,
-                    pitch: 5
-                });
-                viewRef.current.setPosition({
-                    lat: data.location.lat,
-                    lng: data.location.lng,
-                });
+                viewRef.current.setPov({ heading: data.location.heading, pitch: 5 });
+                viewRef.current.setPosition({ lat: data.location.lat, lng: data.location.lng });
             }
             return data;
         },
@@ -173,9 +186,7 @@ const GameContent = () => {
         setRoundData(data);
         map.fitBounds(bounds);
         setTimeout(async () => {
-            await queryClient.invalidateQueries({
-                queryKey: ['game', gameKey],
-            });
+            await queryClient.invalidateQueries({ queryKey: ['game', gameKey] });
             setGuessLocation(null);
             setRoundData(null);
             setIsSubmitted(false);
@@ -183,29 +194,16 @@ const GameContent = () => {
         }, config.roundAutomoveCooldown);
     };
 
-    const newRoundCallback = async (data: RoundData) => {
-        console.log('New Round!');
-        handleNewRound(data);
-    };
-
-    const gameEndCallback = (data: EndGameData) => {
-        console.log('awdawdaw')
-        handleNewRound(data);
-        setGameState(p => ({
-            ...p,
-            isEnded: true,
-            winner: data.winner
-        }));
-    };
-
-    const messageCallback = (message: string) => {
-        toast.error(message);
-    };
-
     const submit = () => {
-        if (!guessLocation) return;
+        if (!guessLocation || isSubmitted) return;
         submitGuess(guessLocation);
         setIsSubmitted(true);
+    };
+
+    const getStatusColor = () => {
+        if (isAllReady) return 'text-emerald-400';
+        if (isSubmitted) return 'text-amber-400';
+        return 'text-neutral-400';
     };
 
     return (
@@ -213,14 +211,16 @@ const GameContent = () => {
             <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-4 md:px-6">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-20 bg-neutral-800/80 text-white text-center rounded-b-[50%_100%] shadow-lg">
                     <p>Round:</p>
-                    <h2 className="text-2xl">{game?.round}</h2>
-                    <p>x{game?.multiplier}</p>
+                    <h2 className="text-2xl">{game?.round || 1}</h2>
+                    <p>x{game?.multiplier || 1}</p>
                 </div>
-                <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
-                    {teams.map((t, index) => (
-                        <TeamBar key={index} rtl={index % 2 !== 0} team={t} defeatTeamName={gameState.defeatTeamName} />
-                    ))}
-                </div>
+                {isJoined && (
+                    <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
+                        {teams.map((t, index) => (
+                            <TeamBar key={index} rtl={index % 2 !== 0} team={t} defeatTeamName={gameState.defeatTeamName} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             <StreetView
@@ -231,21 +231,10 @@ const GameContent = () => {
                     onLoad(v) {
                         viewRef.current = v;
                         if (!game) return;
-                        v.setPov({
-                            heading: game.location.heading,
-                            pitch: 5,
-                        });
-                        v.setPosition({
-                            lat: game.location.lat,
-                            lng: game.location.lng
-                        });
+                        v.setPov({ heading: game.location.heading, pitch: 5 });
+                        v.setPosition({ lat: game.location.lat, lng: game.location.lng });
                     },
-                    options: {
-                        zoom: 0.5,
-                        motionTracking: false,
-                        addressControl: false,
-                        fullscreenControl: false,
-                    },
+                    options: { zoom: 0.5, motionTracking: false, addressControl: false, fullscreenControl: false }
                 }}
             />
 
@@ -255,46 +244,95 @@ const GameContent = () => {
                     style={{
                         background: 'rgba(239,68,68,0.9)',
                         color: '#fff',
-                        boxShadow: '0 8px 32px rgba(239,68,68,0.4), inset 0 2px 4px rgba(255,255,255,0.2)',
+                        boxShadow: '0 8px 32px rgba(239,68,68,0.4), inset 0 2px 4px rgba(255,255,255,0.2)'
                     }}
                     onClick={leaveGame}
                 >
                     Finish Game!
                 </button>
             ) : (
-                <LocationSelectMap
-                    submitGuess={submit}
-                    moveNext={() => { }}
-                    isMoveNextBtnEnabled={false}
-                    apiKey={apiKey}
-                    className="absolute z-30 bottom-6 right-6 p-1.5 w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
+                <div className={`absolute z-30 bottom-6 right-6 p-1.5 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out 
+                    ${isJoined 
+                        ? "w-[90%] h-1/3 sm:w-80 sm:h-64 md:w-96 md:h-72 sm:hover:w-[450px] sm:hover:h-[360px] flex flex-col justify-between" 
+                        : "w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 sm:hover:w-[450px] sm:hover:h-[320px]"
+                    }`}
                 >
-                    {gameState.roundData ? (
-                        <>
-                            <TargetMarker position={gameState.roundData.target} />
-                            {allGuesses.map((g, idx) => (
-                                <div key={idx}>
-                                    <Distance
-                                        path={g && gameState.roundData ? [g, gameState.roundData.target] : []}
-                                        visible={!!gameState.roundData}
-                                    />
-                                    <GuessMarker position={g} />
+                    <LocationSelectMap
+                        submitGuess={submit}
+                        moveNext={() => {}}
+                        isMoveNextBtnEnabled={true}
+                        isMultiplayer={isJoined}
+                        apiKey={apiKey}
+                        className={isJoined ? "w-full h-[75%] rounded-xl overflow-hidden" : "w-full h-full"}
+                    >
+                        {gameState.roundData ? (
+                            <>
+                                <TargetMarker position={gameState.roundData.target} />
+                                {allGuesses.map((g, idx) => (
+                                    <div key={idx}>
+                                        <Distance
+                                            path={g && gameState.roundData ? [g, gameState.roundData.target] : []}
+                                            visible={!!gameState.roundData}
+                                        />
+                                        <GuessMarker position={g} />
+                                    </div>
+                                ))}
+                                <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/10 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[180px] shadow-lg backdrop-blur-sm z-50">
+                                    <div className="flex items-center gap-2 text-neutral-300 font-bold text-xs uppercase tracking-wider mb-1">
+                                        <RiPinDistanceFill size={18} />
+                                        <span>Round Results</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 text-center w-full text-[11px] font-semibold">
+                                        {gameState.roundData.teams?.map((t, idx) => {
+                                            const damage = 'damage' in t ? (t as any).damage : null;
+                                            const health = 'health' in t ? (t as any).health : null;
+
+                                            return (
+                                                <div key={idx} className="flex justify-between w-full px-1 gap-4">
+                                                    <span className="text-gray-400 font-normal">{t.name || `Team ${idx + 1}`}:</span>
+                                                    {damage !== null ? (
+                                                        <span className={damage > 0 ? "text-rose-400" : "text-emerald-400"}>
+                                                            {damage > 0 ? `-${damage}` : `+${Math.abs(damage)}`} HP
+                                                        </span>
+                                                    ) : health !== null ? (
+                                                        <span className="text-neutral-200">{health} HP</span>
+                                                    ) : (
+                                                        <span className="text-emerald-400">Calculated!</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            ))}
-                            <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[140px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
-                                <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
-                                    <RiPinDistanceFill size={18} className="animate-pulse" />
-                                    <span>Result</span>
-                                </div>
-                                <div className="text-[11px] text-gray-400 mt-1 font-medium tracking-wide">
-                                    Calculated score...
-                                </div>
+                            </>
+                        ) : (
+                            guessLocation && <GuessMarker position={guessLocation} />
+                        )}
+                    </LocationSelectMap>
+
+                    {isJoined && (
+                        <div className="w-full pt-2 px-1 flex flex-col gap-1 z-40">
+                            <button
+                                onClick={submit}
+                                disabled={!guessLocation || isSubmitted}
+                                className="w-full rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-medium p-2.5 text-xs uppercase tracking-wider transition-colors duration-200 cursor-pointer disabled:bg-neutral-900/80 disabled:text-neutral-500 disabled:cursor-not-allowed border border-white/5"
+                            >
+                                {isSubmitted ? 'Guess Submitted!' : 'Submit Guess!'}
+                            </button>
+                            
+                            <div className="flex justify-between items-center text-[11px] px-1 text-neutral-400 font-medium h-4">
+                                <span>Status:</span>
+                                <span className={`font-semibold transition-all duration-300 ${getStatusColor()}`}>
+                                    {isAllReady 
+                                        ? 'All players ready!' 
+                                        : isSubmitted 
+                                            ? 'Waiting for other players...' 
+                                            : 'Waiting for your guess'}
+                                </span>
                             </div>
-                        </>
-                    ) : (
-                        guessLocation && <GuessMarker position={guessLocation} />
+                        </div>
                     )}
-                </LocationSelectMap>
+                </div>
             )}
             <GameUI />
         </div>

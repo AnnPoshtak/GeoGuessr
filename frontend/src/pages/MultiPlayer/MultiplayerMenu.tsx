@@ -3,11 +3,38 @@ import { useMultiplayerContext } from '@/context/MultiplayerContext';
 import { gameQueue, gameRoom } from '@/ws/wsClient';
 import Queue from './Queue';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function MultiplayerMenu() {
     const navigate = useNavigate();
     const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
     const { setIsJoined, setGameMode } = useMultiplayerContext();
+
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const checkUserAuth = async () => {
+        try {
+            const userData = await usersApi.getCurrentUser();
+            setUser(userData);
+        } catch (error) {
+            console.error('Authentication error:', error);
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        checkUserAuth();
+    }, []);
+
+    useEffect(() => {
+        if (!loading && !user) {
+            navigate("/");
+            toast.info("To play in multiplayer mode, you need to log in to your account");
+        }
+    }, [loading, user, navigate]);
 
     const handleSelectMode = (mode: '1v1' | '2v2') => {
         setSelectedMode(mode);
@@ -53,6 +80,18 @@ export default function MultiplayerMenu() {
             gameQueue.off('game_joined');
         };
     }, []);
+
+    if (loading) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center bg-[#080f1a] text-white">
+                <div className="tracking-widest uppercase animate-pulse">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null;
+    }
 
     if (selectedMode) {
         return (
@@ -141,7 +180,6 @@ export default function MultiplayerMenu() {
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* 1v1 Mode */}
                         <button
                             onClick={() => handleSelectMode('1v1')}
                             className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-cyan-400/30 p-8 transition-all duration-300 hover:border-cyan-400/60 hover:shadow-[0_0_30px_rgba(0,229,255,0.3)]"
@@ -161,7 +199,6 @@ export default function MultiplayerMenu() {
                             </div>
                         </button>
 
-                        {/* 2v2 Mode */}
                         <button
                             onClick={() => handleSelectMode('2v2')}
                             className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 p-8 transition-all duration-300 hover:border-purple-400/60 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]"
