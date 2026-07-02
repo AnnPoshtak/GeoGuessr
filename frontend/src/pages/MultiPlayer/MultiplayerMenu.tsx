@@ -4,6 +4,7 @@ import { gameQueue, gameRoom } from '@/ws/wsClient';
 import Queue from './Queue';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { usersApi } from '@/api';
 
 export default function MultiplayerMenu() {
     const navigate = useNavigate();
