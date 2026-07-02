@@ -50,8 +50,8 @@ def join_game_currently_in() -> bool:
         return True
     return False
 
-def get_full_player_data(game_id: str, player_id: int) -> dict:
+def get_full_player_data(game_key: str, player_id: int) -> dict:
     u = UserModel.query.get(player_id)
-    player_data = game_room.get_player(game_id, player_id)
+    player_data = game_room.get_player(game_key, player_id)
     player_data.update(user_public_schema.dump(u))
     return full_player_data_schema.dump(player_data)

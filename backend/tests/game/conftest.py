@@ -19,5 +19,5 @@ def test_game_room(mocker):
         "heading": 269
     }
     mocker.patch('app.core.game_room.get_random_location', return_value=loc)
-    game_id = game_room.create_game(players)
-    return app_redis.hgetall(game_id)
+    game_key = game_room.create_game(players)
+    return app_redis.json().get(game_key)

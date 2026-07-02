@@ -35,6 +35,7 @@ class GameNamespace(Namespace):
         game_key = game_room.get_current_game(current_user.id)
         if not game_key:
             return send('You have to be part of the ongoing game')
+        # TODO: reset guess_submitted only when new_round event is emmitted
         session['guess_submitted'] = False
         game = game_room.get_game(game_key)
         game['teams'] = game_room.get_teams(game_key)
@@ -45,9 +46,7 @@ class GameNamespace(Namespace):
                 players.append(get_full_player_data(game_key, p['id']))
             t['players'] = players
             teams.append(t)
-        game['round'] = int(game['round'])
         game['multiplier'] = round(int(game['round']) * settings.round_health_multiplier, 1)
-        game['location'] = json.loads(game['location'])
         return {
             'game': game
         }
@@ -73,7 +72,7 @@ class GameNamespace(Namespace):
         session['guess_submitted'] = True
 
         if game_room.all_players_submitted(game_key):
-            target = json.loads(game['location'])
+            target = game['location']
             team_scores = []
             winning_team = game_room.get_winning_team(game_key)
             teams = game_room.get_teams(game_key)

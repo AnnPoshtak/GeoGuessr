@@ -35,8 +35,8 @@ def send_disconnect_event(game_key: str, user_id: int):
             run_time = datetime.datetime.now() + datetime.timedelta(seconds=settings.defeat_team_interval)
             team = game_room.get_player(game_key, user.id)['team']
             record_defeat = True
-            for p in json.loads(game_room.get_team(game_key, team)['players']):
-                if json.loads(game_room.get_player(game_key, p)['is_connected']):
+            for p in game_room.get_team(game_key, team)['players']:
+                if game_room.get_player(game_key, p)['is_connected']:
                     record_defeat = False
                     break
             if record_defeat:

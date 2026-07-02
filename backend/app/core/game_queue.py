@@ -131,5 +131,5 @@ class GameQueueRepository(RedisRepository):
         TEAMS = teams or settings.game_teams
         players = self.form_teams(players, TEAMS)
         from app import game_room
-        game_id = game_room.create_game(players)
-        return game_id
+        game_key = game_room.create_game(players)
+        return game_key
