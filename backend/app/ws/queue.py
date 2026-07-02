@@ -38,7 +38,7 @@ class QueueNamespace(Namespace):
             return close_room(queue_key)
         
         emit('queue_joined', {
-            'queue': json.dumps(queue)
+            'queue': queue
         }, to=queue_key, broadcast=True)
     
     @authenticated_only
@@ -49,6 +49,6 @@ class QueueNamespace(Namespace):
         game_queue.leave_queue(current_user.id, key)
         queue = game_queue.get_queue(key)
         emit('queue_left', {
-            'queue': json.dumps(queue)
+            'queue': queue
         }, to=key, broadcast=True)
         leave_room(key)

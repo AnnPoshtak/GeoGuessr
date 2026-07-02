@@ -23,7 +23,7 @@ def test_game_queue_join_game_start(mocker, app):
     game_key = f'gameroom:{game_key.hex}'
     assert app_redis.llen(key) == 0
     assert app_redis.scard(pl) == 0
-    assert app_redis.hgetall(game_key)
+    assert app_redis.json().get(game_key) is not None
 
 def test_join_queue_while_in_another_queue(app):
     key1 = 'gamequeue:4'

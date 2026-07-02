@@ -1,5 +1,5 @@
 import uuid
-from flask import current_app
+from app.config import settings
 from .util import get_random_location, calculate_line_distance, calculate_score
 import json
 from redis import Redis
@@ -21,8 +21,7 @@ class GameRoomRepository(RedisRepository):
         return self.redis.get(player_id)
     
     def join_game(self, player_id: int, game_key: str) -> None:
-        with current_app.app_context():
-            EXPIRY_TIME = current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
+        EXPIRY_TIME = settings.gameroom_expiry_time
         self.redis.set(player_id, game_key)
         self.redis.expire(player_id, EXPIRY_TIME)
 
@@ -35,10 +34,9 @@ class GameRoomRepository(RedisRepository):
         :return: A key to access the game in redis
         :rtype: str
         '''
-        with current_app.app_context():
-            EXPIRY_TIME = current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
-            MIN_PLAYERS = current_app.config.get('MIN_PLAYERS', 2)
-            STARTING_HEALTH = current_app.config.get('STARTING_PLAYER_HEALTH', 5000)
+        EXPIRY_TIME = settings.gameroom_expiry_time
+        MIN_PLAYERS = settings.min_players
+        STARTING_HEALTH = settings.starting_player_health
         if len(set([p['team'] for p in players])) < 2:
             raise ValueError('At least 2 teams must have at least one player!')
         if len(players) < MIN_PLAYERS:
@@ -50,76 +48,69 @@ class GameRoomRepository(RedisRepository):
         game_mapping = {
             'id': game_id,
             'round': 1,
-            'location': json.dumps(location),
+            'location': location,
             'player_ids': [],
             'teams': []
         }
         pipe = self.redis.pipeline()
         for p in players:
-            self.join_game(p['id'], game_id)
+            self.join_game(p['id'], game_key)
             team_key = f"{game_key}:teams:{p['team']}"
             if not p['team'] in game_mapping['teams']:
                 game_mapping['teams'].append(p['team'])
             game_mapping['player_ids'].append(p['id'])
             player_key = f'{game_key}:players:{p["id"]}'
-            t_players = self.redis.hget(team_key, 'players')
-            if t_players:
-                t_players = json.loads(t_players)
-            else:
+            t_players = self.redis.json().get(team_key, '$.players')
+            if t_players is None:
                 t_players = []
             t_players.append(p['id'])
             t_health = STARTING_HEALTH // len(t_players)
-            pipe.hset(team_key, mapping={
-                'players': json.dumps(t_players),
+            pipe.json().set(team_key, '$', {
+                'players': t_players,
                 'name': p['team'],
                 'health': t_health,
                 'score': 0,
-                'distance': 0
+                'distance': 0,
             })
-            pipe.hset(player_key, mapping={
+            pipe.json().set(player_key, '$', {
                 'id': p['id'],
-                'guess': json.dumps(None),
+                'guess': None,
                 'team': p['team'],
-                'is_connected': json.dumps(True),
+                'is_connected': True,
             })
             pipe.expire(player_key, EXPIRY_TIME)
             pipe.expire(team_key, EXPIRY_TIME)
 
-        game_mapping['player_ids'] = json.dumps(game_mapping['player_ids'])
-        game_mapping['teams'] = json.dumps(game_mapping['teams'])
-        pipe.hset(game_key, mapping=game_mapping)
+        pipe.json().set(game_key, '$', game_mapping)
         pipe.expire(game_key, EXPIRY_TIME)
         pipe.execute()
         return game_key
     
-    def get_game(self, game_id: str) -> dict:
-        return self.redis.hgetall(game_id)
+    def get_game(self, game_key: str) -> dict:
+        return self.redis.json().get(game_key)
 
-    def get_player(self, game_id: str, player_id: int) -> dict:
-        return self.redis.hgetall(f'{game_id}:players:{player_id}')
+    def get_player(self, game_key: str, player_id: int) -> dict:
+        return self.redis.json().get(f'{game_key}:players:{player_id}')
     
-    def set_player_key(self, game_id: str, player_id: int, key: str, value: Any) -> Any:
-        self.redis.hset(f'{game_id}:players:{player_id}', key, json.dumps(value))
-        self.update_game_expiry(game_id)
+    def set_player_key(self, game_key: str, player_id: int, key: str, value: Any) -> Any:
+        self.redis.json().set(f'{game_key}:players:{player_id}', f'$.{key}', value)
+        self.update_game_expiry(game_key)
         return value
     
-    def set_team_key(self, game_id: str, team_name: str, key: str, value: Any) -> Any:
-        self.redis.hset(f'{game_id}:teams:{team_name}', key, json.dumps(value))
-        self.update_game_expiry(game_id)
+    def set_team_key(self, game_key: str, team_name: str, key: str, value: Any) -> Any:
+        self.redis.json().set(f'{game_key}:teams:{team_name}', key, value)
+        self.update_game_expiry(game_key)
         return value
     
     def get_team_average_score(self, game_key: str, team_name: str):
         scores = []
         team = self.get_team(game_key, team_name)
-        team['players'] = json.loads(team['players'])
         game = self.get_game(game_key)
         for p in team['players']:
             player = self.get_player(game_key, p)
-            player['guess'] = json.loads(player['guess'])
-            if not player['guess']:
+            if self._is_null(player['guess']):
                 continue
-            player['id'] = json.loads(player['id'])
-            distance = calculate_line_distance(json.loads(game['location']), player['guess'])
+            distance = calculate_line_distance(game['location'], player['guess'])
             score = calculate_score(distance)
             scores.append(score)
         avg_score = sum(scores) // (len(scores) or 1)
@@ -139,124 +130,113 @@ class GameRoomRepository(RedisRepository):
                 
         return winning_team
     
-    def get_team(self, game_id: str, team_name: str) -> dict:
-        return self.redis.hgetall(f'{game_id}:teams:{team_name}')
+    def get_team(self, game_key: str, team_name: str) -> dict:
+        return self.redis.json().get(f'{game_key}:teams:{team_name}')
     
-    def get_teams(self, game_id: str) -> dict[str, list]:
-        game = self.get_game(game_id)
+    def get_teams(self, game_key: str) -> dict[str, list]:
+        game = self.get_game(game_key)
         teams = []
-        for t in json.loads(game['teams']):
-            t = self.get_team(game_id, t)
-            t['players'] = json.loads(t['players'])
+        for t in game['teams']:
+            t = self.get_team(game_key, t)
             for i in range(len(t['players'])):
-                t['players'][i] = self.get_player(game_id, t['players'][i])
-                t['players'][i]['guess'] = json.loads(t['players'][i]['guess'])
-                if not t['players'][i]['guess']:
+                t['players'][i] = self.get_player(game_key, t['players'][i])
+                if self._is_null(t['players'][i]['guess']):
                     continue
-                t['players'][i]['id'] = json.loads(t['players'][i]['id'])
-            t['health'] = json.loads(t['health'])
-            t['score'] = json.loads(t['score'])
-            t['distance'] = json.loads(t['distance'])
             teams.append(t)
         return teams
     
-    def all_players_submitted(self, game_id: str) -> bool:
-        players = self.get_player_ids(game_id)
+    def _is_null(self, val) -> bool:
+        return val is None or val == 'null'
+
+    def all_players_submitted(self, game_key: str) -> bool:
+        players = self.get_player_ids(game_key)
         for p in players:
-            if not json.loads(self.redis.hget(f'{game_id}:players:{p}', 'guess')):
+            if self._is_null(self.redis.json().get(f'{game_key}:players:{p}', 'guess')):
                 return False
         return True
     
-    def submit_guess(self, game_id: str, player_id: int, guess: dict):
-        if not player_id in self.get_player_ids(game_id):
+    def submit_guess(self, game_key: str, player_id: int, guess: dict):
+        if not player_id in self.get_player_ids(game_key):
             raise ValueError(f'Player with id {player_id} does not belong to this game!')
         
-        self.redis.hset(f'{game_id}:players:{player_id}', 'guess', json.dumps(guess))
-        self.update_game_expiry(game_id)
+        self.redis.json().set(f'{game_key}:players:{player_id}', '$.guess', guess)
+        self.update_game_expiry(game_key)
     
-    def get_player_ids(self, game_id: str) -> list[int]:
+    def get_player_ids(self, game_key: str) -> list[int]:
         '''
         A helper function used to get player ids to get all player hashes
         
-        :param game_id: redis game key
-        :type game_id: str
+        :param game_key: redis game key
+        :type game_key: str
         :return: A list of player ids(db primary keys)
         :rtype: list[int]
         '''
-        player_ids = self.redis.hget(game_id, 'player_ids')
-        return json.loads(player_ids)
+        player_ids = self.redis.json().get(game_key, 'player_ids')
+        return player_ids
     
-    def update_game_expiry(self, game_id: str, expiry_time: int = None) -> None:
+    def update_game_expiry(self, game_key: str, expiry_time: int = None) -> None:
         '''
         Updates game and all game-related data, i.e. gameroom:players, expiry time
         
-        :param game_id: redis game key
-        :type game_id: str
-        :param expiry_time: expiry time. If not provided, `app.config['GAMEROOM_EXPIRY_TIME']` is used instead
+        :param game_key: redis game key
+        :type game_key: str
+        :param expiry_time: expiry time. If not provided, `settings.gameroom_expiry_time` is used instead
         :type expiry_time: int
         '''
-        with current_app.app_context():
-            EXPIRY_TIME = expiry_time or current_app.config.get('GAMEROOM_EXPIRY_TIME', 86400)
-        player_ids = self.get_player_ids(game_id)
+        EXPIRY_TIME = expiry_time or settings.gameroom_expiry_time
+        player_ids = self.get_player_ids(game_key)
         pipe = self.redis.pipeline()
-        teams = json.loads(self.get_game(game_id)['teams'])
+        teams = self.get_game(game_key)['teams']
         for p in player_ids:
-            pipe.expire(f'{game_id}:players:{p}', EXPIRY_TIME)
+            pipe.expire(f'{game_key}:players:{p}', EXPIRY_TIME)
             pipe.expire(p, EXPIRY_TIME)
         for t in teams:
             pipe.expire(t, EXPIRY_TIME)
-        pipe.expire(game_id, EXPIRY_TIME)
+        pipe.expire(game_key, EXPIRY_TIME)
         pipe.execute()
     
-    def set_team_health(self, game_id: str, team_name: str, health: int) -> None:
+    def set_team_health(self, game_key: str, team_name: str, health: int) -> None:
         '''
         Sets health for team with id `team_name`
         
-        :param game_id: redis game key
-        :type game_id: str
+        :param game_key: redis game key
+        :type game_key: str
         :param team_name: team name
         :type team_name: str
         :param health: A new health amount
         :type health: int
         '''
-        self.redis.hset(f'{game_id}:teams:{team_name}', 'health', health)
-        self.update_game_expiry(game_id)
+        self.redis.json().set(f'{game_key}:teams:{team_name}', 'health', health)
+        self.update_game_expiry(game_key)
         return health
     
-    def move_next_round(self, game_id: str) -> int:
+    def move_next_round(self, game_key: str) -> int:
         '''
         Increments current round and selects a new location.
         Also, it resets all submitted_guess values to `False`
         
-        :param game_id: redis game key
-        :type game_id: str
+        :param game_key: redis game key
+        :type game_key: str
         :return: new game round
         :rtype: int
         '''
-        curr_round = int(self.redis.hget(game_id, 'round'))
+        curr_round = int(self.redis.json().get(game_key, 'round'))
         curr_round += 1
-        new_location = json.dumps(get_random_location())
-        self.redis.hset(game_id, 'round', curr_round)
-        self.redis.hset(game_id, 'location', new_location)
-        players = self.get_player_ids(game_id)
+        new_location = get_random_location()
+        self.redis.json().set(game_key, 'round', curr_round)
+        self.redis.json().set(game_key, 'location', new_location)
+        players = self.get_player_ids(game_key)
         for p in players:
-            self.redis.hset(f'{game_id}:players:{p}', 'guess', json.dumps(None))
-        self.update_game_expiry(game_id)
+            self.redis.json().set(f'{game_key}:players:{p}', 'guess', None)
+        self.update_game_expiry(game_key)
         return curr_round
 
-    def end_game(self, game_id: str) -> None:
-        '''
-        Delets gameroom:`game_id` and all related data, i.e. gameroom:`game_id`:players:*
-        
-        :param game_id: redis game key
-        :type game_id: str
-        '''
-        player_ids = self.get_player_ids(game_id)
+    def end_game(self, game_key: str) -> None:
+        player_ids = self.get_player_ids(game_key)
         pipe = self.redis.pipeline()
-        game = self.get_game(game_id)
-        players = [f'{game_id}:players:{p}' for p in player_ids]
-        player_games = [p for p in player_ids]
-        teams = [f'{game_id}:teams:{t}' for t in json.loads(game['teams'])]
-        pipe.delete(*players, *teams, *player_games)
-        pipe.delete(game_id)
+        game = self.get_game(game_key)
+        [pipe.json().delete(f'{game_key}:players:{p}', '$') for p in player_ids]
+        [pipe.delete(p) for p in player_ids]
+        [pipe.json().delete(f'{game_key}:teams:{t}', '$') for t in game['teams']]
+        pipe.delete(game_key)
         pipe.execute()

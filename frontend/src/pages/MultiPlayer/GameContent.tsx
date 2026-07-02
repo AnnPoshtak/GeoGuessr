@@ -70,7 +70,7 @@ const GameContent = () => {
 
     useEffect(() => {
         if (!gameState.isEnded) return;
-        const timeout = setTimeout(leaveGame, config.gameEndAutoMoveCooldown);
+        const timeout = setTimeout(leaveGame, config.gameEndAutomoveCooldown);
         return () => {
             clearTimeout(timeout);
         };
@@ -191,7 +191,7 @@ const GameContent = () => {
             setRoundData(null);
             setIsSubmitted(false);
             setAllGuesses([]);
-        }, config.roundAutoMoveCooldown);
+        }, config.roundAutomoveCooldown);
     };
 
     const submit = () => {

@@ -1,6 +1,7 @@
 from flask_socketio import Namespace, emit, send
-from flask import session, current_app
+from flask import session
 from app import game_room
+from app.config import settings
 from app.core.util import calculate_line_distance, calculate_score
 from .util import join_game, authenticated_only, join_game_currently_in, get_full_player_data
 import json
@@ -34,6 +35,7 @@ class GameNamespace(Namespace):
         game_key = game_room.get_current_game(current_user.id)
         if not game_key:
             return send('You have to be part of the ongoing game')
+        # TODO: reset guess_submitted only when new_round event is emmitted
         session['guess_submitted'] = False
         game = game_room.get_game(game_key)
         game['teams'] = game_room.get_teams(game_key)
@@ -44,9 +46,7 @@ class GameNamespace(Namespace):
                 players.append(get_full_player_data(game_key, p['id']))
             t['players'] = players
             teams.append(t)
-        game['round'] = int(game['round'])
-        game['multiplier'] = round(int(game['round']) * current_app.config['ROUND_HEALTH_MULTIPLIER'], 1)
-        game['location'] = json.loads(game['location'])
+        game['multiplier'] = round(int(game['round']) * settings.round_health_multiplier, 1)
         return {
             'game': game
         }
@@ -72,7 +72,7 @@ class GameNamespace(Namespace):
         session['guess_submitted'] = True
 
         if game_room.all_players_submitted(game_key):
-            target = json.loads(game['location'])
+            target = game['location']
             team_scores = []
             winning_team = game_room.get_winning_team(game_key)
             teams = game_room.get_teams(game_key)
@@ -85,7 +85,7 @@ class GameNamespace(Namespace):
                 score_diff = best_score - team_scores[i]
                 health = int(t['health'])
                 if t['name'] != winning_team:
-                    health -= round(score_diff * (int(game['round']) * current_app.config['ROUND_HEALTH_MULTIPLIER']))
+                    health -= round(score_diff * (int(game['round']) * settings.round_health_multiplier))
                     health = max(0, health)
                     t['health'] = health
                     game_room.set_team_health(game_key, t['name'], health)

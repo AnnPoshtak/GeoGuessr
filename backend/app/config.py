@@ -1,20 +1,32 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-from redis import Redis
+from pydantic import model_validator, Field
+from pydantic_settings import BaseSettings, YamlConfigSettingsSource, SettingsConfigDict, EnvSettingsSource
 
 PROJECT_PATH = Path(__file__).resolve().parents[2]
-ENV_PATH = Path(PROJECT_PATH) / "backend" / ".env"
+ENV_PATH = str(PROJECT_PATH / "backend" / ".env")
+YAML_CONFIG_PATH = str(PROJECT_PATH / "shared" / "config.yml")
 
 load_dotenv(ENV_PATH)
 
-class BaseConfig():
-    SECRET_KEY = os.environ['SECRET_KEY']
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax' # Set to Lax from Strict because OAuth will not work otherwise
-    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URI']
-    CORS_ORIGINS = [os.environ['CORS_ORIGINS'].strip("'\"")]
-    OAUTH_PROVIDERS = {
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_PATH,
+        yaml_file=YAML_CONFIG_PATH,
+        extra='ignore',
+        env_ignore_empty=True
+    )
+    SECRET_KEY: str
+    SQLALCHEMY_DATABASE_URI: str
+    FRONTEND_URL: str
+    REDIS_URL: str
+
+    SESSION_COOKIE_HTTPONLY: bool = True
+    SESSION_COOKIE_SAMESITE: str = 'Lax'
+    CORS_ORIGINS: list[str] = Field(default=[], validation_alias='CORS_ORIGINS_CONFIG')
+    OAUTH_PROVIDERS: dict = {
         'google': {
             'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
             'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
@@ -23,40 +35,63 @@ class BaseConfig():
             'api_base_url': 'https:/googleapis.com/',
             'userinfo': {
                 'url': 'https://www.googleapis.com/oauth2/v3/userinfo',
-                # This field exists because different oauth providers give different emails, i.e. github 
-                # provides you with a list of emals attached to an account
                 'email': lambda json: json['email'],
             },
             'scopes': ['email']
         },
     }
-    FRONTEND_URL = os.environ['FRONTEND_URL']
-    # An url for frontend oauth callback
-    FRONTEND_OAUTH_CALLBACK_URL = f"{FRONTEND_URL}/oauth/callback/"
-    # Flask session-related settings
-    SESSION_TYPE = 'redis'
-    # Game config
-    SCORE_CALCULATION_SCALE = 300_000 # Distance after which score starts to drop drammatically, in metres
-    MIN_PLAYERS = 2
-    GAMEROOM_EXPIRY_TIME = 86400 # 24 hours
-    # TODO: sync this config option with frontend
-    STARTING_PLAYER_HEALTH = 1000
-    ROUND_HEALTH_MULTIPLIER = 1.1 # The damage equals to score_diff * round * this multiplier
-    GAME_PLAYERCOUNT = (2, 4)
-    GAME_TEAMS = {
-        0: 'red',
-        1: 'blue'
-    }
-    DEFEAT_TEAM_INTERVAL = 5
-    DISCONNECT_EVENT_INTERVAL = 3
-    
-    REDIS_URL = os.environ['REDIS_URL']
+    FRONTEND_OAUTH_CALLBACK_URL: str = ""
+    SESSION_TYPE: str = 'redis'
+    score_calculation_scale: int = 300000
+    min_players: int = 2
+    gameroom_expiry_time: int = 7200
+    starting_player_health: int = 1000
+    round_health_multiplier: float = 1.1
+    game_playercount: tuple = (2, 4)
+    game_teams: dict = {0: 'red', 1: 'blue'}
+    defeat_team_interval: int = 5
+    disconnect_event_interval: int = 3
 
-class DevelopmentConfig(BaseConfig):
-    DEBUG = True
-    FLASK_ENV = 'DEVELOPMENT'
+    @model_validator(mode='after')
+    def _set_computed_fields(self):
+        self.FRONTEND_OAUTH_CALLBACK_URL = f"{self.FRONTEND_URL}/oauth/callback/"
+        if not self.CORS_ORIGINS:
+            self.CORS_ORIGINS = [os.environ.get('CORS_ORIGINS', 'http://localhost:5173').strip("'\"")]
+        return self
 
-class TestingConfig(BaseConfig):
-    TESTING = True
-    FLASK_ENV = 'TESTING'
-    SQLALCHEMY_DATABASE_URI = 'sqlite://'
+    @classmethod
+    def settings_customise_sources(cls, settings_cls, **kwargs):
+        return (
+            EnvSettingsSource(settings_cls),
+            YamlConfigSettingsSource(settings_cls),
+        )
+
+
+class DevelopmentConfig(Settings):
+    DEBUG: bool = True
+    FLASK_ENV: str = 'DEVELOPMENT'
+
+
+class TestingConfig(Settings):
+    TESTING: bool = True
+    FLASK_ENV: str = 'TESTING'
+    SQLALCHEMY_DATABASE_URI: str = 'sqlite://'
+
+
+_settings: Settings | None = None
+
+
+class _SettingsProxy:
+    def __getattr__(self, name):
+        if _settings is None:
+            raise RuntimeError("Settings not configured. Call configure_settings() first.")
+        return getattr(_settings, name)
+
+
+settings = _SettingsProxy()
+
+
+def configure_settings(config_class=DevelopmentConfig) -> Settings:
+    global _settings
+    _settings = config_class()
+    return _settings
