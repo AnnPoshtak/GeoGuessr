@@ -1,9 +1,8 @@
 import datetime
-from flask_socketio import emit
+from flask_socketio import emit, leave_room
 from app.config import settings
 from app.extensions import scheduler, db
 from app.models import UserModel
-import json
 
 def record_technical_defeat(game_key: str, team: str) -> None:
     from app import game_room
@@ -63,3 +62,24 @@ def send_disconnect_event(game_key: str, user_id: int):
                 to=game_key,
                 namespace='/game'
             )
+
+def send_queue_leave_event(user_id: int):
+    from app import game_queue
+    with scheduler.app.app_context():
+        user = db.session.query(UserModel).filter_by(id=user_id).first()
+        if not user:
+            return
+        if not game_queue.is_player_in_queue(user_id):
+            return
+        key = game_queue.get_player_queue(user_id)
+        game_queue.leave_queue(user_id, key)
+        queue = game_queue.get_queue(key)
+        emit(
+            'queue_left', 
+            {
+                'queue': queue
+            }, 
+            to=key, 
+            broadcast=True,
+            namespace='/queue'
+        )

@@ -7,6 +7,7 @@ round_automove_cooldown: 5000 # milliseconds
 game_end_automove_cooldown: 10000 # milliseconds
 round_health_multiplier: 1.1 # The damage equals to score_diff * round * this multiplier
 game_playercount: [2, 4]
-game_teams: {0: 'red', 1: 'blue'}
+game_teams: { 0: 'red', 1: 'blue' }
 defeat_team_interval: 5
 disconnect_event_interval: 3
+leave_queue_event_interval: 3

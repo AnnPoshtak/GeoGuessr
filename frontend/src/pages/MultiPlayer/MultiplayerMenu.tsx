@@ -1,19 +1,40 @@
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayerContext } from '@/context/MultiplayerContext';
 import { gameQueue, gameRoom } from '@/ws/wsClient';
-import Queue from './Queue';
-import { useEffect, useState } from 'react';
+    import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { usersApi } from '@/api';
+import Queue from './Queue';
+import { useQuery } from '@tanstack/react-query';
+import type { GameQueue } from '@/interfaces/GameQueue';
+import fetchQueue from '@/ws/fetchQueue';
+import queryClient from '@/api/queryClient';
+import type { User } from '@/interfaces/Player';
 
 export default function MultiplayerMenu() {
     const navigate = useNavigate();
-    const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
-    const { setIsJoined, setGameMode } = useMultiplayerContext();
-
-    const [user, setUser] = useState(null);
+    const { setIsJoined } = useMultiplayerContext();
+    
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-
+    const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
+    
+    const { data: queue } = useQuery<GameQueue | null>({
+        queryKey: ['queue'],
+        queryFn: async () => {
+            const data = await fetchQueue();
+            return data;
+        },
+        enabled: !!user,
+        retry: false,
+        staleTime: Infinity
+    });
+    useEffect(() => {
+        if (queue) {
+            setSelectedMode(queue.player_count === 2 ? '1v1' : '2v2');
+        }
+    }, [queue]);
+    
     const checkUserAuth = async () => {
         try {
             const userData = await usersApi.getCurrentUser();
@@ -39,7 +60,6 @@ export default function MultiplayerMenu() {
 
     const handleSelectMode = (mode: '1v1' | '2v2') => {
         setSelectedMode(mode);
-        setGameMode(mode);
     };
 
     const handleJoinGame = () => {
@@ -49,17 +69,16 @@ export default function MultiplayerMenu() {
 
     const joinQueue = () => {
         if (!selectedMode) return;
-        const playerCount = selectedMode === '2v2' ? 4 : 2;
+        const playerCount = selectedMode === '1v1' ? 2 : 4;
         gameQueue.emit('join', {
             player_count: playerCount,
-            mode: selectedMode
         });
     };
 
     const leaveQueue = () => {
         gameQueue.emit('leave');
+        queryClient.invalidateQueries({ queryKey: ['queue'] });
         setSelectedMode(null);
-        setGameMode(null);
     };
 
     const handleBackClick = () => {
@@ -68,17 +87,13 @@ export default function MultiplayerMenu() {
     };
 
     useEffect(() => {
-        gameRoom.on('game_joined', () => {
-            handleJoinGame();
-        });
+        gameRoom.on('game_joined', handleJoinGame);
 
-        gameQueue.on('game_joined', () => {
-            handleJoinGame();
-        });
+        gameQueue.on('game_joined', handleJoinGame);
 
         return () => {
-            gameRoom.off('game_joined');
-            gameQueue.off('game_joined');
+            gameRoom.off('game_joined', handleJoinGame);
+            gameQueue.off('game_joined', handleJoinGame);
         };
     }, []);
 
@@ -132,7 +147,7 @@ export default function MultiplayerMenu() {
 
                 <main className="relative z-20 flex-1 w-full max-w-4xl flex flex-col items-center justify-center px-4 pb-12">
                     <div className="w-full max-w-md bg-[#0c1524]/60 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
-                        <Queue join={joinQueue} leave={leaveQueue} mode={selectedMode} />
+                        <Queue queue={queue} join={joinQueue} leave={leaveQueue}/>
                     </div>
                 </main>
             </div>

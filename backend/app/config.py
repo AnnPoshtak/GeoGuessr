@@ -42,15 +42,17 @@ class Settings(BaseSettings):
     }
     FRONTEND_OAUTH_CALLBACK_URL: str = ""
     SESSION_TYPE: str = 'redis'
-    score_calculation_scale: int = 300000
-    min_players: int = 2
-    gameroom_expiry_time: int = 7200
-    starting_player_health: int = 1000
-    round_health_multiplier: float = 1.1
-    game_playercount: tuple = (2, 4)
-    game_teams: dict = {0: 'red', 1: 'blue'}
-    defeat_team_interval: int = 5
-    disconnect_event_interval: int = 3
+    
+    score_calculation_scale: int
+    min_players: int
+    gameroom_expiry_time: int
+    starting_player_health: int
+    round_health_multiplier: float
+    game_playercount: list
+    game_teams: dict
+    defeat_team_interval: int
+    disconnect_event_interval: int
+    leave_queue_event_interval: int 
 
     @model_validator(mode='after')
     def _set_computed_fields(self):
@@ -88,7 +90,7 @@ class _SettingsProxy:
         return getattr(_settings, name)
 
 
-settings = _SettingsProxy()
+settings: Settings = _SettingsProxy()
 
 
 def configure_settings(config_class=DevelopmentConfig) -> Settings:

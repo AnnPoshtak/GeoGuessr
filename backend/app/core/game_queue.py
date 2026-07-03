@@ -13,7 +13,6 @@ class GameQueueRepository(RedisRepository):
     '''
     def __init__(self, redis: Redis):
         super().__init__(redis=redis, key='gamequeue')
-        self.players_key = f'{self.key}:all_players'
 
     def get_queue(self, identifier: str | int) -> list:
         '''
@@ -29,15 +28,14 @@ class GameQueueRepository(RedisRepository):
         else:
             key = identifier
         return self.redis.lrange(key, 0, -1)
-    
+
+    def get_player_queue(self, player_id: int) -> str | None:
+        '''Returns the queue key the player is currently in'''
+        return self.redis.get(f'{player_id}:queue')
     
     def is_player_in_queue(self, player_id: int) -> bool:
         '''Returns `True` if player is in a queue'''
-        q = self.get_all_players_in_queues()
-        return str(player_id) in q or player_id in q
-    
-    def get_all_players_in_queues(self) -> list:
-        return self.redis.smembers(self.players_key)
+        return bool(self.get_player_queue(player_id))
     
     def get_queue_key(self, player_count: int) -> str:
         '''A helper function used to get a queue key for `player_count`'''
@@ -74,18 +72,18 @@ class GameQueueRepository(RedisRepository):
             return
         if len(q) == player_count - 1:
             players = self.redis.rpop(key, player_count - 1)
-            self.redis.srem(self.players_key, *players)
+            self.redis.delete(f'{player_id}:queue')
             players.append(player_id)
             game = self.create_room(players)
             return game
 
         self.redis.lpush(key, player_id)
-        self.redis.sadd(self.players_key, player_id)
+        self.redis.set(f'{player_id}:queue', key)
     
     def leave_queue(self, player_id: int, queue: str) -> None:
         '''Remove player `player_id` from queue `queue`'''
         self.redis.lrem(queue, 1, player_id)
-        self.redis.srem(self.players_key, player_id)
+        self.redis.delete(f'{player_id}:queue')
 
     
     def form_teams(self, players: list, teams: dict) -> list[dict]:
