@@ -277,28 +277,37 @@ const GameContent = () => {
                                         <GuessMarker position={g} />
                                     </div>
                                 ))}
-                                <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/10 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[180px] shadow-lg backdrop-blur-sm z-50">
-                                    <div className="flex items-center gap-2 text-neutral-300 font-bold text-xs uppercase tracking-wider mb-1">
-                                        <RiPinDistanceFill size={18} />
+                                
+                                <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/15 text-white p-5 bottom-6 left-6 right-6 flex flex-col items-center min-w-[260px] shadow-2xl backdrop-blur-md z-50 cursor-pointer transition-all duration-300 cubic-bezier(0.25, 0.8, 0.25, 1) hover:scale-[1.1] hover:origin-bottom hover:z-[999] hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                                    <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider mb-2">
+                                        <RiPinDistanceFill size={20} />
                                         <span>Round Results</span>
                                     </div>
-                                    <div className="flex flex-col gap-0.5 text-center w-full text-[11px] font-semibold">
+                                    <div className="flex flex-col gap-1.5 text-center w-full text-xs font-semibold">
                                         {gameState.roundData.teams?.map((t, idx) => {
                                             const damage = 'damage' in t ? (t as any).damage : null;
-                                            const health = 'health' in t ? (t as any).health : null;
+                                            const currentHp = 'health' in t ? (t as any).health : null;
+                                            
+                                            const oldHp = currentHp !== null && damage !== null ? currentHp + damage : currentHp;
+                                            const xpGained = currentHp !== null && oldHp !== null ? currentHp - oldHp : 0;
 
                                             return (
-                                                <div key={idx} className="flex justify-between w-full px-1 gap-4">
-                                                    <span className="text-gray-400 font-normal">{t.name || `Team ${idx + 1}`}:</span>
-                                                    {damage !== null ? (
-                                                        <span className={damage > 0 ? "text-rose-400" : "text-emerald-400"}>
-                                                            {damage > 0 ? `-${damage}` : `+${Math.abs(damage)}`} HP
-                                                        </span>
-                                                    ) : health !== null ? (
-                                                        <span className="text-neutral-200">{health} HP</span>
-                                                    ) : (
-                                                        <span className="text-emerald-400">Calculated!</span>
-                                                    )}
+                                                <div key={idx} className="flex flex-col w-full border-b border-white/5 pb-1 last:border-0 last:pb-0">
+                                                    <div className="flex justify-between w-full px-1 gap-4 items-center">
+                                                        <span className="text-gray-300 font-medium">{t.name || `Team ${idx + 1}`}:</span>
+                                                        <div className="flex flex-col items-end">
+                                                            {currentHp !== null && (
+                                                                <span className="text-gray-400 text-[10px]">HP: {currentHp}</span>
+                                                            )}
+                                                            {damage !== null ? (
+                                                                <span className={xpGained >= 0 ? "text-emerald-400" : "text-rose-400"}>
+                                                                    {xpGained >= 0 ? `+${xpGained}` : `${xpGained}`} xp
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-emerald-400">Calculated!</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             );
                                         })}
