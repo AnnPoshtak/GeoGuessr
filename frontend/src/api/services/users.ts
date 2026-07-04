@@ -1,11 +1,5 @@
+import type { User } from '@/interfaces/Player';
 import client from '../client';
-
-export interface User {
-  id?: string;
-  email?: string;
-  username?: string;
-  [key: string]: any;
-}
 
 export const getCurrentUser = async (): Promise<User | null> => {
   try {

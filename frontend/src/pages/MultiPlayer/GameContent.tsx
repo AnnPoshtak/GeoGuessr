@@ -11,7 +11,7 @@ import { useMultiplayerContext } from "@/context/MultiplayerContext";
 import type { GameRoom } from "@/interfaces/GameRoom";
 import type { MapLocation } from "@/interfaces/MapLocation";
 import type { RoundData } from "@/interfaces/RoundData";
-import type { ApiTeam, Team } from "@/interfaces/Team";
+import type { Team } from "@/interfaces/Team";
 import fetchGame from "@/ws/fetchGame";
 import submitGuess from "@/ws/submitGuess";
 import { gameQueue, gameRoom } from "@/ws/wsClient";
@@ -46,19 +46,11 @@ const GameContent = () => {
             ...t,
             players: t.players.map((p) => p.id === playerId ? {
                 ...p,
-                isConnected: value,
+                is_connected: value,
             } : p)
         })
         ));
     };
-
-    const initTeams = (teams: ApiTeam[]) => teams.map((t) => ({
-        ...t,
-        players: t.players.map(p => ({
-            ...p,
-            isConnected: true,
-        }))
-    }))
 
     const navigate = useNavigate();
     const [gameState, setGameState] = useState<GameState>({
@@ -115,32 +107,34 @@ const GameContent = () => {
             toast.info(`Player ${data.username} has disconnected from the game!`);
         });
 
-        gameRoom.on('record_defeat_started', (data) => {
+        const recordDefeatStartedCallback = (data: {team: string}) => {
             setGameState((p) => ({
                 ...p,
                 defeatTeamName: data.team,
             }));
-        });
-        gameRoom.on('record_defeat_cancelled', () => {
+        };
+        const recordDefeatCancelledCallback = () => {
             setGameState((p) => ({
                 ...p,
                 defeatTeamName: null,
             }));
-        });
+        }
+
+        gameRoom.on('record_defeat_started', recordDefeatStartedCallback);
+        gameRoom.on('record_defeat_cancelled', recordDefeatCancelledCallback);
 
         gameRoom.on('game_end', gameEndCallback);
-        gameQueue.on('game_end', gameEndCallback);
 
         return () => {
-            gameRoom.off('new_round');
-            gameRoom.off('game_end');
-            gameRoom.off('message');
+            gameRoom.off('new_round', newRoundCallback);
+            gameRoom.off('message', messageCallback);
             gameRoom.off('player_reconnected');
             gameRoom.off('player_disconnected');
-            gameQueue.off('record_defeat_started');
-            gameQueue.off('record_defeat_cancelled');
-            gameQueue.off('new_round');
-            gameQueue.off('game_end');
+
+            gameRoom.off('record_defeat_started', recordDefeatStartedCallback);
+            gameRoom.off('record_defeat_cancelled', recordDefeatCancelledCallback);
+            gameRoom.off('new_round', newRoundCallback);
+            gameRoom.off('game_end', gameEndCallback);
         };
     }, [isJoined, gameKey, map]);
 
@@ -155,7 +149,7 @@ const GameContent = () => {
         queryFn: async () => {
             console.log('Fetching game...');
             const data = await fetchGame();
-            setTeams(initTeams(data.teams));
+            setTeams(data.teams);
             if (viewRef.current) {
                 viewRef.current.setPov({ heading: data.location.heading, pitch: 5 });
                 viewRef.current.setPosition({ lat: data.location.lat, lng: data.location.lng });
@@ -173,7 +167,7 @@ const GameContent = () => {
     const handleNewRound = (data: RoundData) => {
         if (!map) return;
         const bounds = new google.maps.LatLngBounds();
-        setTeams(initTeams(data.teams));
+        setTeams(data.teams);
         data.teams.forEach((t) => {
             for (let pl of t.players) {
                 if (!pl.guess) continue;
@@ -294,7 +288,7 @@ const GameContent = () => {
                                             return (
                                                 <div key={idx} className="flex flex-col w-full border-b border-white/5 pb-1 last:border-0 last:pb-0">
                                                     <div className="flex justify-between w-full px-1 gap-4 items-center">
-                                                        <span className="text-gray-300 font-medium">{t.name || `Team ${idx + 1}`}:</span>
+                                                        <span className="text-gray-300 font-medium">{t.name}:</span>
                                                         <div className="flex flex-col items-end">
                                                             {currentHp !== null && (
                                                                 <span className="text-gray-400 text-[10px]">HP: {currentHp}</span>

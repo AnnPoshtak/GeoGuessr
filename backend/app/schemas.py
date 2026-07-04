@@ -76,6 +76,7 @@ class FullPlayerDataSchema(ma.Schema, DatetimeSchemaMixin):
     # Game session data
     team = fields.Str(required=True)
     guess = fields.Nested(GuessSchema, allow_none=True, dump_default=None)
+    is_connected = fields.Bool()
 
 
 # Instance schemas for easy usage

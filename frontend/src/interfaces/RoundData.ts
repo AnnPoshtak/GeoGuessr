@@ -1,7 +1,7 @@
 import type { MapLocation } from "./MapLocation";
-import type { NewRoundTeam } from "./NewRoundTeam";
+import type { Team } from "./Team";
 
 export interface RoundData {
-    teams: NewRoundTeam[],
+    teams: Team[],
     target: MapLocation;
 };

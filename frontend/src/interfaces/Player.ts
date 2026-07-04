@@ -7,6 +7,6 @@ export interface User {
 
 export interface Player extends User {
     guess: MapLocation,
-    isConnected: boolean;
+    is_connected: boolean;
 }
 

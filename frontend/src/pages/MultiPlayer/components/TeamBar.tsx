@@ -38,10 +38,10 @@ const TeamBar = ({ team, rtl, defeatTeamName }: TeamBarProps) => {
                         key={p.id || p.username}
                         className={`flex items-center gap-3 ${
                             rtl ? "flex-row-reverse text-right" : "flex-row text-left"
-                        } ${!p.isConnected ? "opacity-40" : ""}`}
+                        } ${!p.is_connected ? "opacity-40" : ""}`}
                     >
                         <div className={`p-2 rounded-full border shrink-0 ${
-                            p.isConnected 
+                            p.is_connected 
                                 ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400' 
                                 : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
                         }`}>
@@ -53,13 +53,13 @@ const TeamBar = ({ team, rtl, defeatTeamName }: TeamBarProps) => {
                                 {p.username}
                             </span>
                             <span className={`text-[9px] font-black uppercase tracking-wider block mt-0.5 ${
-                                p.isConnected ? "text-cyan-400/90" : "text-rose-400 animate-pulse"
+                                p.is_connected ? "text-cyan-400/90" : "text-rose-400 animate-pulse"
                             }`}>
-                                {p.isConnected ? "Online" : "Disconnected"}
+                                {p.is_connected ? "Online" : "Disconnected"}
                             </span>
                         </div>
 
-                        {!p.isConnected && (
+                        {!p.is_connected && (
                             <RiSignalWifiErrorLine size={14} className="text-rose-400 animate-pulse shrink-0 ml-auto" />
                         )}
                     </div>
