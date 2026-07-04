@@ -10,7 +10,6 @@ import { useGameContext } from "@/context/GameContext";
 import { useMultiplayerContext } from "@/context/MultiplayerContext";
 import type { GameRoom } from "@/interfaces/GameRoom";
 import type { MapLocation } from "@/interfaces/MapLocation";
-import type { RoundData } from "@/interfaces/RoundData";
 import type { Team } from "@/interfaces/Team";
 import fetchGame from "@/ws/fetchGame";
 import submitGuess from "@/ws/submitGuess";
@@ -21,27 +20,35 @@ import { RiPinDistanceFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import TeamBar from "./components/TeamBar";
+import { usersApi } from "@/api";
 
 interface GameState {
     isEnded: boolean;
-    winner: Record<string, string> | null;
+    winner: Team | null;
+    teams: Team[];
     roundData: RoundData | null;
     defeatTeamName: string | null;
 }
-
-interface EndGameData extends RoundData {
-    winner: Record<string, string>;
-    roundData: RoundData;
+interface NewRoundData {
+    target: MapLocation;
+    teams: Team[];
+    scores: Record<number, number>;
+}
+interface RoundData {
+    target: MapLocation;
+    playerScore: number;
+}
+interface EndGameData extends NewRoundData {
+    winner: Team;
 }
 
 const GameContent = () => {
     const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
-    const [teams, setTeams] = useState<Team[]>([]);
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { gameKey, isJoined } = useMultiplayerContext();
 
     const setIsPlayerConnected = (playerId: number, value: boolean) => {
-        setTeams(prev => prev.map(t =>
+        setGameState(prev => ({...prev, teams: prev.teams.map(t =>
         ({
             ...t,
             players: t.players.map((p) => p.id === playerId ? {
@@ -49,13 +56,14 @@ const GameContent = () => {
                 is_connected: value,
             } : p)
         })
-        ));
+        )}));
     };
 
     const navigate = useNavigate();
     const [gameState, setGameState] = useState<GameState>({
         isEnded: false,
         winner: null,
+        teams: [],
         roundData: null,
         defeatTeamName: null,
     });
@@ -70,9 +78,9 @@ const GameContent = () => {
 
     const { guessLocation, map, setGuessLocation, isSubmitted, setIsSubmitted } = useGameContext();
 
-    const totalPlayersCount = teams.length;
-    const submittedPlayersCount = teams.filter(t => 
-        t.players.some(p => p.guess && typeof p.guess === 'object' && 'lat' in p.guess)
+    const totalPlayersCount = gameState.teams.length;
+    const submittedPlayersCount = gameState.teams.filter(t => 
+        t.players.some(p => !!p.guess)
     ).length;
 
     const isAllReady = submittedPlayersCount === totalPlayersCount && totalPlayersCount > 0;
@@ -81,7 +89,7 @@ const GameContent = () => {
         toast.error(message);
     }
 
-    async function newRoundCallback(data: RoundData) {
+    async function newRoundCallback(data: NewRoundData) {
         handleNewRound(data);
     }
 
@@ -89,7 +97,13 @@ const GameContent = () => {
         handleNewRound(data);
         setGameState(p => ({ ...p, isEnded: true, winner: data.winner }));
     }
-
+    // TODO: when we refactor authentication and will be using contexts/rtk replace this
+    const {data: user} = useQuery({
+        queryKey: ['current-user'],
+        queryFn: usersApi.getCurrentUser,
+        retry: false,
+    })
+    
     useEffect(() => {
         if (!isJoined) return;
 
@@ -124,6 +138,7 @@ const GameContent = () => {
         gameRoom.on('record_defeat_cancelled', recordDefeatCancelledCallback);
 
         gameRoom.on('game_end', gameEndCallback);
+        gameQueue.on('game_end', gameEndCallback);
 
         return () => {
             gameRoom.off('new_round', newRoundCallback);
@@ -135,25 +150,21 @@ const GameContent = () => {
             gameRoom.off('record_defeat_cancelled', recordDefeatCancelledCallback);
             gameRoom.off('new_round', newRoundCallback);
             gameRoom.off('game_end', gameEndCallback);
+            gameQueue.off('game_end', gameEndCallback);
         };
     }, [isJoined, gameKey, map]);
-
-    const setRoundData = (data: typeof gameState.roundData) => {
-        setGameState(p => ({ ...p, roundData: data }));
-    };
 
     const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
     const { data: game } = useQuery<GameRoom | null>({
         queryKey: ['game', gameKey],
         queryFn: async () => {
-            console.log('Fetching game...');
             const data = await fetchGame();
-            setTeams(data.teams);
             if (viewRef.current) {
-                viewRef.current.setPov({ heading: data.location.heading, pitch: 5 });
-                viewRef.current.setPosition({ lat: data.location.lat, lng: data.location.lng });
+                viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
+                viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
             }
+            setGameState((p) => ({...p, target: data.target, teams: data.teams}))
             return data;
         },
         enabled: isJoined && !gameState.isEnded,
@@ -164,25 +175,37 @@ const GameContent = () => {
         navigate('/');
     };
 
-    const handleNewRound = (data: RoundData) => {
+    const handleNewRound = (data: NewRoundData) => {
         if (!map) return;
+        if (!user) return;
         const bounds = new google.maps.LatLngBounds();
-        setTeams(data.teams);
         data.teams.forEach((t) => {
             for (let pl of t.players) {
-                if (!pl.guess) continue;
-                setAllGuesses(p => [...p, pl.guess]);
-                bounds.extend(pl.guess);
+                const guess = pl.guess;
+                if (!guess) continue;
+                setAllGuesses(p => [...p, guess]);
+                bounds.extend(guess);
             }
         });
         bounds.extend(data.target);
-
-        setRoundData(data);
+        setGameState((p) => ({
+                ...p, 
+                teams: data.teams,
+                roundData: {
+                    target: data.target, 
+                    playerScore: data.scores[user.id]
+                },
+            })
+        );
         map.fitBounds(bounds);
         setTimeout(async () => {
             await queryClient.invalidateQueries({ queryKey: ['game', gameKey] });
             setGuessLocation(null);
-            setRoundData(null);
+            setGameState((p) => ({
+                    ...p, 
+                    roundData: null,
+                })
+            );
             setIsSubmitted(false);
             setAllGuesses([]);
         }, config.roundAutomoveCooldown);
@@ -210,7 +233,7 @@ const GameContent = () => {
                 </div>
                 {isJoined && (
                     <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
-                        {teams.map((t, index) => (
+                        {gameState.teams.map((t, index) => (
                             <TeamBar key={index} rtl={index % 2 !== 0} team={t} defeatTeamName={gameState.defeatTeamName} />
                         ))}
                     </div>
@@ -225,8 +248,8 @@ const GameContent = () => {
                     onLoad(v) {
                         viewRef.current = v;
                         if (!game) return;
-                        v.setPov({ heading: game.location.heading, pitch: 5 });
-                        v.setPosition({ lat: game.location.lat, lng: game.location.lng });
+                        v.setPov({ heading: game.target.heading, pitch: 5 });
+                        v.setPosition({ lat: game.target.lat, lng: game.target.lng });
                     },
                     options: { zoom: 0.5, motionTracking: false, addressControl: false, fullscreenControl: false }
                 }}
@@ -259,54 +282,37 @@ const GameContent = () => {
                         apiKey={apiKey}
                         className={isJoined ? "w-full h-[75%] rounded-xl overflow-hidden" : "w-full h-full"}
                     >
-                        {gameState.roundData ? (
+                        {gameState.roundData?.target ? (
                             <>
                                 <TargetMarker position={gameState.roundData.target} />
                                 {allGuesses.map((g, idx) => (
                                     <div key={idx}>
                                         <Distance
-                                            path={g && gameState.roundData ? [g, gameState.roundData.target] : []}
-                                            visible={!!gameState.roundData}
+                                            path={g && gameState.roundData?.target ? [g, gameState.roundData.target] : []}
+                                            visible={!!gameState}
                                         />
                                         <GuessMarker position={g} />
                                     </div>
                                 ))}
-                                
-                                <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/15 text-white p-5 bottom-6 left-6 right-6 flex flex-col items-center min-w-[260px] shadow-2xl backdrop-blur-md z-50 cursor-pointer transition-all duration-300 cubic-bezier(0.25, 0.8, 0.25, 1) hover:scale-[1.1] hover:origin-bottom hover:z-[999] hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
-                                    <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider mb-2">
-                                        <RiPinDistanceFill size={20} />
-                                        <span>Round Results</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1.5 text-center w-full text-xs font-semibold">
-                                        {gameState.roundData.teams?.map((t, idx) => {
-                                            const damage = 'damage' in t ? (t as any).damage : null;
-                                            const currentHp = 'health' in t ? (t as any).health : null;
-                                            
-                                            const oldHp = currentHp !== null && damage !== null ? currentHp + damage : currentHp;
-                                            const xpGained = currentHp !== null && oldHp !== null ? currentHp - oldHp : 0;
-
-                                            return (
-                                                <div key={idx} className="flex flex-col w-full border-b border-white/5 pb-1 last:border-0 last:pb-0">
-                                                    <div className="flex justify-between w-full px-1 gap-4 items-center">
-                                                        <span className="text-gray-300 font-medium">{t.name}:</span>
-                                                        <div className="flex flex-col items-end">
-                                                            {currentHp !== null && (
-                                                                <span className="text-gray-400 text-[10px]">HP: {currentHp}</span>
-                                                            )}
-                                                            {damage !== null ? (
-                                                                <span className={xpGained >= 0 ? "text-emerald-400" : "text-rose-400"}>
-                                                                    {xpGained >= 0 ? `+${xpGained}` : `${xpGained}`} xp
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-emerald-400">Calculated!</span>
-                                                            )}
-                                                        </div>
+                                {gameState.roundData?.playerScore &&
+                                    <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/15 text-white p-5 bottom-6 left-6 right-6 flex flex-col items-center min-w-[260px] shadow-2xl backdrop-blur-md z-50 cursor-pointer transition-all duration-300 cubic-bezier(0.25, 0.8, 0.25, 1) hover:scale-[1.1] hover:origin-bottom hover:z-[999] hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                                        <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider mb-2">
+                                            <RiPinDistanceFill size={20} />
+                                            <span>Round Results</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5 text-center w-full text-xs font-semibold">
+                                            <div className="flex flex-col w-full border-b border-white/5 pb-1 last:border-0 last:pb-0">
+                                                <div className="flex justify-between w-full px-1 gap-4 items-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className={"text-emerald-400"}>
+                                                            Your Score: {gameState.roundData?.playerScore}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                }
                             </>
                         ) : (
                             guessLocation && <GuessMarker position={guessLocation} />

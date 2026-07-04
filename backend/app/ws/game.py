@@ -65,7 +65,7 @@ class GameNamespace(Namespace):
         game_room.set_guess(game_key, current_user.id, guess)
 
         if game_room.all_players_submitted(game_key):
-            target = game['location']
+            target = game['target']
             team_scores = []
             winning_team = game_room.get_winning_team(game_key)
             teams = game_room.get_teams(game_key)
@@ -74,6 +74,7 @@ class GameNamespace(Namespace):
                 team_scores.append(avg_score)
 
             best_score = max(team_scores)
+            scores = game_room.get_scores(game_key)
             for i, t in enumerate(teams):
                 score_diff = best_score - team_scores[i]
                 health = t['health']
@@ -81,16 +82,19 @@ class GameNamespace(Namespace):
                     health -= round(score_diff * (int(game['round']) * settings.round_health_multiplier))
                     health = max(0, health)
                     game_room.set_team_health(game_key, t['name'], health)
+                    t['health'] = health
                     if health <= 0:
                         emit('game_end', {
                             'winner': winning_team,
                             'target': target,
                             'teams': teams,
+                            'scores': scores,
                         }, to=game_key, broadcast=True)
                         return game_room.end_game(game_key)
             game_room.move_next_round(game_key)
             emit('new_round', {
                 'target': target,
                 'teams': teams,
+                'scores': scores,
             }, to=game_key, broadcast=True)
         

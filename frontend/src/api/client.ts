@@ -1,7 +1,8 @@
+import config from '@/config';
 import axios from 'axios';
 
 const client = axios.create({
-  baseURL: (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000').trim().replace('./', ''),
+  baseURL: config.backendUrl,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

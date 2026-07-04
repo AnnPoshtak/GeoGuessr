@@ -10,11 +10,15 @@ def record_technical_defeat(game_key: str, team: str) -> None:
         game = game_room.get_game(game_key)
         if not game or not 'teams' in game:
             return
-        winning_team = game_room.get_winning_team(game_key)
-        emit('game_end',
+        teams = [t for t in game_room.get_teams() if team['name'] != team]
+        winning_team = game_room.get_winning_team(game_key, teams)
+        emit(
+            'game_end',
             {
                 'winner': winning_team,
-                'target': game['location'],
+                'target': game['target'],
+                'teams': game_room.get_teams(game_key),
+                'scores': game_room.get_scores(game_key),
             }, 
             to=game_key, 
             broadcast=True,
@@ -40,7 +44,7 @@ def send_disconnect_event(game_key: str, user_id: int):
                     break
             if record_defeat:
                 scheduler.add_job(
-                    f'record_technical_defeat:{user.id}:{team}',
+                    f'record_technical_defeat:{game_key}:{team}',
                     record_technical_defeat, 
                     args=(game_key, team),
                     next_run_time=run_time,

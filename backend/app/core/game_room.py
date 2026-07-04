@@ -23,6 +23,7 @@ class GameRoomRepository(RedisRepository):
     def join_game(self, player_id: int, game_key: str) -> None:
         EXPIRY_TIME = settings.gameroom_expiry_time
         self.redis.set(player_id, game_key)
+        self.redis.delete(f'{player_id}:queue')
         self.redis.expire(player_id, EXPIRY_TIME)
 
     def create_game(self, players: list[dict]) -> str: 
@@ -48,7 +49,7 @@ class GameRoomRepository(RedisRepository):
         game_mapping = {
             'id': game_id,
             'round': 1,
-            'location': location,
+            'target': location,
             'player_ids': [],
             'teams': []
         }
@@ -102,22 +103,41 @@ class GameRoomRepository(RedisRepository):
         self.update_game_expiry(game_key)
         return value
     
+    def get_player_score(self, game_key: str, player_id: int):
+        game = self.get_game(game_key)
+        player = self.get_player(game_key, player_id)
+        distance = calculate_line_distance(game['target'], player['guess'])
+        score = calculate_score(distance)
+        return score
+    
+    def get_scores(self, game_key: str) -> dict:
+        result = {}
+        for i in self.get_player_ids(game_key):
+            score = self.get_player_score(game_key, i)
+            result[i] = score
+        return result
+    
     def get_team_average_score(self, game_key: str, team_name: str):
         scores = []
         team = self.get_team(game_key, team_name)
-        game = self.get_game(game_key)
+        # players = list of player ids
         for p in team['players']:
             player = self.get_player(game_key, p)
             if self._is_null(player['guess']):
                 continue
-            distance = calculate_line_distance(game['location'], player['guess'])
-            score = calculate_score(distance)
+            score = self.get_player_score(game_key, p)
             scores.append(score)
         avg_score = sum(scores) // (len(scores) or 1)
         return avg_score
 
-    def get_winning_team(self, game_key: str) -> dict:
-        teams = self.get_teams(game_key)
+    def get_winning_team(self, game_key: str, teams: list[dict] = []) -> dict:
+        '''
+        :args:
+        game_key: game id
+        teams: list of teams from which to choose. Used to exclude the team that is technically defeated
+        '''
+        if not teams:
+            teams = self.get_teams(game_key)
         
         winning_team = None
         highest_score = float('-inf')
@@ -224,7 +244,7 @@ class GameRoomRepository(RedisRepository):
         curr_round += 1
         new_location = get_random_location()
         self.redis.json().set(game_key, 'round', curr_round)
-        self.redis.json().set(game_key, 'location', new_location)
+        self.redis.json().set(game_key, 'target', new_location)
         players = self.get_player_ids(game_key)
         for p in players:
             self.redis.json().set(f'{game_key}:players:{p}', 'guess', None)

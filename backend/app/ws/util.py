@@ -34,7 +34,7 @@ def join_game_currently_in() -> bool:
         join_game(current_user.id, game_key)
         player = game_room.get_player(game_key, current_user.id)
         try:
-            scheduler.remove_job(f"record_technical_defeat:{current_user.id}:{player['team']}")
+            scheduler.remove_job(f"record_technical_defeat:{game_key}:{player['team']}")
             emit(
                 'record_defeat_cancelled',
                 broadcast=True,

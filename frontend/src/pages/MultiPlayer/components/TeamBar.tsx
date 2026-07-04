@@ -13,7 +13,7 @@ interface TeamBarProps {
 const TeamBar = ({ team, rtl, defeatTeamName }: TeamBarProps) => {
     const maxHealth = config.startingPlayerHealth * team.players.length;
     const healthPercentage = Math.max(0, Math.min(100, (team.health / maxHealth) * 100));
-    const [seconds, setSeconds] = useState(config.defeatTeamInterval);
+    const [seconds, setSeconds] = useState<number>(config.defeatTeamInterval);
 
     useEffect(() => {
         if (!defeatTeamName) return;

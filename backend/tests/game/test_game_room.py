@@ -25,7 +25,7 @@ def test_game_create(mocker, app):
     game_key = game_room.create_game(players)
     assert game_key == f'gameroom:{game_uuid.hex}'
     game = app_redis.json().get(game_key)
-    assert game['location'] == loc
+    assert game['target'] == loc
     assert game['id'] == game_uuid.hex
     assert app_redis.ttl(game_key) == settings.gameroom_expiry_time
 
@@ -72,7 +72,7 @@ def test_move_next_round(test_game_room, mocker):
     }
     app_redis.json().set(f'{game_key}:players:{players[0]}', 'guess', guess)
     assert app_redis.json().get(game_key, 'round') == 1
-    assert app_redis.json().get(game_key, 'location') == test_game_room['location']
+    assert app_redis.json().get(game_key, 'target') == test_game_room['target']
     loc = {
         "lat": 15, 
         "lng": 16, 
@@ -81,7 +81,7 @@ def test_move_next_round(test_game_room, mocker):
     mocker.patch('app.core.game_room.get_random_location', return_value=loc)
     game_room.move_next_round(game_key)
     assert app_redis.json().get(game_key, 'round') == 2
-    assert app_redis.json().get(game_key, 'location') == loc
+    assert app_redis.json().get(game_key, 'target') == loc
     assert app_redis.json().get(f'{game_key}:players:{players[0]}', 'guess') is None \
         or app_redis.json().get(f'{game_key}:players:{players[0]}', 'guess') == 'null'
 
