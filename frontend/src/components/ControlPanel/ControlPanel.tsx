@@ -111,6 +111,13 @@ export const Dropdown = () => {
                 <LogIn size={14} className="stroke-[2.5]" />
                 Log In with Google
               </button>
+
+              <div className="h-[1px] bg-white/10 my-3" />
+              
+              <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                Music settings
+              </div>
+              <VolumeControl />
             </div>
           )}
         </div>
