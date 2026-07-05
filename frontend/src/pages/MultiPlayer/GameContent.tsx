@@ -224,15 +224,15 @@ const GameContent = () => {
     };
 
     return (
-        <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
-            <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-4 md:px-6">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-20 bg-neutral-800/80 text-white text-center rounded-b-[50%_100%] shadow-lg">
+        <div className="relative min-h-dvh w-full bg-[#080f1a] overflow-x-hidden select-none">
+            <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-3 sm:px-4 md:px-6">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(92vw,12rem)] h-20 bg-neutral-800/80 text-white text-center rounded-b-[50%_100%] shadow-lg">
                     <p>Round:</p>
                     <h2 className="text-2xl">{game?.round || 1}</h2>
                     <p>x{game?.multiplier || 1}</p>
                 </div>
                 {isJoined && (
-                    <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">
+                    <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-start text-neutral-50 w-full *:pointer-events-auto">
                         {gameState.teams.map((t, index) => (
                             <TeamBar key={index} rtl={index % 2 !== 0} team={t} defeatTeamName={gameState.defeatTeamName} />
                         ))}
@@ -257,7 +257,7 @@ const GameContent = () => {
 
             {gameState.isEnded ? (
                 <button
-                    className="absolute z-40 bottom-6 right-6 md:right-12 rounded-xl w-[calc(100%-3rem)] sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
+                    className="absolute z-40 left-4 right-4 bottom-4 sm:left-auto sm:right-6 sm:bottom-6 rounded-xl w-auto sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
                     style={{
                         background: 'rgba(239,68,68,0.9)',
                         color: '#fff',
@@ -268,10 +268,10 @@ const GameContent = () => {
                     Finish Game!
                 </button>
             ) : (
-                <div className={`absolute z-30 bottom-6 right-6 p-1.5 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out 
+                <div className={`absolute z-30 left-3 right-3 bottom-3 sm:left-auto sm:right-6 sm:bottom-6 p-1.5 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out 
                     ${isJoined 
-                        ? "w-[90%] h-1/3 sm:w-80 sm:h-64 md:w-96 md:h-72 sm:hover:w-[450px] sm:hover:h-[360px] flex flex-col justify-between" 
-                        : "w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 sm:hover:w-[450px] sm:hover:h-[320px]"
+                        ? "left-3 right-3 bottom-3 sm:left-auto sm:right-6 sm:bottom-6 w-auto h-[34vh] min-h-[220px] sm:w-80 sm:h-64 md:w-96 md:h-72 sm:hover:w-[450px] sm:hover:h-[360px] flex flex-col justify-between" 
+                        : "left-3 right-3 bottom-3 sm:left-auto sm:right-6 sm:bottom-6 w-auto h-[34vh] min-h-[220px] sm:w-80 sm:h-56 md:w-96 md:h-64 sm:hover:w-[450px] sm:hover:h-[320px]"
                     }`}
                 >
                     <LocationSelectMap
@@ -295,7 +295,7 @@ const GameContent = () => {
                                     </div>
                                 ))}
                                 {gameState.roundData?.playerScore &&
-                                    <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/15 text-white p-5 bottom-6 left-6 right-6 flex flex-col items-center min-w-[260px] shadow-2xl backdrop-blur-md z-50 cursor-pointer transition-all duration-300 cubic-bezier(0.25, 0.8, 0.25, 1) hover:scale-[1.1] hover:origin-bottom hover:z-[999] hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                                    <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/15 text-white p-5 bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col items-center w-[calc(100%-1.5rem)] max-w-[260px] sm:min-w-[220px] shadow-2xl backdrop-blur-md z-50 cursor-pointer transition-all duration-300 cubic-bezier(0.25, 0.8, 0.25, 1) hover:scale-[1.1] hover:origin-bottom hover:z-[999] hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                                         <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider mb-2">
                                             <RiPinDistanceFill size={20} />
                                             <span>Round Results</span>

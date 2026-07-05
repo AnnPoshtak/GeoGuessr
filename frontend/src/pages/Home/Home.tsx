@@ -18,6 +18,7 @@ export default function Home() {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+        const context = ctx;
         const W = canvas.width;
         const H = canvas.height;
 
@@ -27,16 +28,16 @@ export default function Home() {
         const x = (v: number) => v * W;
         const y = (v: number) => v * H;
 
-        const ocean = ctx.createLinearGradient(0, 0, 0, H);
+        const ocean = context.createLinearGradient(0, 0, 0, H);
         ocean.addColorStop(0, '#5bc8f5');
         ocean.addColorStop(0.3, '#1e88e5');
         ocean.addColorStop(1, '#0a3d8f');
 
-        const atm = ctx.createLinearGradient(0, 0, 0, H * 0.15);
+        const atm = context.createLinearGradient(0, 0, 0, H * 0.15);
         atm.addColorStop(0, 'rgba(255,255,255,0.5)');
         atm.addColorStop(1, 'rgba(255,255,255,0)');
 
-        const gloss = ctx.createRadialGradient(W * 0.28, H * 0.08, 0, W * 0.45, H * 0.28, W * 0.65);
+        const gloss = context.createRadialGradient(W * 0.28, H * 0.08, 0, W * 0.45, H * 0.28, W * 0.65);
         gloss.addColorStop(0, 'rgba(255,255,255,0.25)');
         gloss.addColorStop(0.5, 'rgba(255,255,255,0.05)');
         gloss.addColorStop(1, 'rgba(0,0,0,0)');
@@ -44,26 +45,26 @@ export default function Home() {
         function land(points: number[][], color = '#2d7a4f', shadow = '#1a5c35') {
             if (points.length < 2) return;
 
-            ctx.beginPath();
-            ctx.moveTo(points[0][0] + 4, points[0][1] + 4);
-            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0] + 4, points[i][1] + 4);
-            ctx.closePath();
-            ctx.fillStyle = shadow;
-            ctx.fill();
+            context.beginPath();
+            context.moveTo(points[0][0] + 4, points[0][1] + 4);
+            for (let i = 1; i < points.length; i++) context.lineTo(points[i][0] + 4, points[i][1] + 4);
+            context.closePath();
+            context.fillStyle = shadow;
+            context.fill();
 
-            ctx.beginPath();
-            ctx.moveTo(points[0][0], points[0][1]);
-            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
-            ctx.closePath();
-            ctx.fillStyle = color;
-            ctx.fill();
+            context.beginPath();
+            context.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) context.lineTo(points[i][0], points[i][1]);
+            context.closePath();
+            context.fillStyle = color;
+            context.fill();
 
-            ctx.beginPath();
-            ctx.moveTo(points[0][0], points[0][1]);
-            for (let i = 1; i < Math.ceil(points.length * 0.4); i++) ctx.lineTo(points[i][0], points[i][1]);
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
+            context.beginPath();
+            context.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < Math.ceil(points.length * 0.4); i++) context.lineTo(points[i][0], points[i][1]);
+            context.strokeStyle = 'rgba(255,255,255,0.2)';
+            context.lineWidth = 1.5;
+            context.stroke();
         }
 
         const drawAllIslands = () => {
@@ -97,13 +98,13 @@ export default function Home() {
             mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
             mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
 
-            ctx.clearRect(0, 0, W, H);
+            context.clearRect(0, 0, W, H);
 
-            ctx.fillStyle = ocean;
-            ctx.fillRect(0, 0, W, H);
+            context.fillStyle = ocean;
+            context.fillRect(0, 0, W, H);
 
-            ctx.fillStyle = atm;
-            ctx.fillRect(0, 0, W, H * 0.15);
+            context.fillStyle = atm;
+            context.fillRect(0, 0, W, H * 0.15);
 
             globalOffset -= 0.6;
             if (globalOffset <= -W) globalOffset = 0;
@@ -111,36 +112,36 @@ export default function Home() {
             const time = Date.now() * 0.001;
             const wobbleAngle = Math.sin(time) * 0.02;
 
-            ctx.save();
-            ctx.translate(W / 2 + mouseRef.current.x * 20, H / 2 + mouseRef.current.y * 20);
-            ctx.rotate(wobbleAngle - 0.08);
-            ctx.translate(-W / 2, -H / 2);
+            context.save();
+            context.translate(W / 2 + mouseRef.current.x * 20, H / 2 + mouseRef.current.y * 20);
+            context.rotate(wobbleAngle - 0.08);
+            context.translate(-W / 2, -H / 2);
 
-            ctx.save();
-            ctx.translate(globalOffset, 0);
+            context.save();
+            context.translate(globalOffset, 0);
             drawAllIslands();
-            ctx.translate(W, 0);
+            context.translate(W, 0);
             drawAllIslands();
-            ctx.restore();
+            context.restore();
 
-            ctx.restore();
+            context.restore();
 
-            ctx.fillStyle = gloss;
-            ctx.fillRect(0, 0, W, H);
+            context.fillStyle = gloss;
+            context.fillRect(0, 0, W, H);
 
-            ctx.save();
-            ctx.translate(mouseRef.current.x * 10, mouseRef.current.y * 10);
-            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-            ctx.lineWidth = 0.8;
+            context.save();
+            context.translate(mouseRef.current.x * 10, mouseRef.current.y * 10);
+            context.strokeStyle = 'rgba(255,255,255,0.07)';
+            context.lineWidth = 0.8;
             for (let i = 0; i <= 12; i++) {
                 const lx = (W / 12) * i;
-                ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, H); ctx.stroke();
+                context.beginPath(); context.moveTo(lx, 0); context.lineTo(lx, H); context.stroke();
             }
             for (let i = 0; i <= 8; i++) {
                 const ly = (H / 8) * i;
-                ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(W, ly); ctx.stroke();
+                context.beginPath(); context.moveTo(0, ly); context.lineTo(W, ly); context.stroke();
             }
-            ctx.restore();
+            context.restore();
 
             animationFrameId = requestAnimationFrame(render);
         };
@@ -154,7 +155,7 @@ export default function Home() {
 
     return (
         <div 
-            className="relative w-full h-screen flex flex-col items-center justify-between bg-[#080f1a] font-sans overflow-hidden text-white"
+            className="relative app-shell flex flex-col items-center justify-between bg-[#080f1a] font-sans overflow-x-hidden text-white"
             onMouseMove={handleMouseMove}
         >
             <div className="absolute inset-0 pointer-events-none" style={{
@@ -169,8 +170,8 @@ export default function Home() {
                 `
             }} />
 
-            <header className="relative z-20 w-full flex flex-col items-center pt-8 md:pt-16 px-6 text-center">
-                <div className="absolute right-4 top-4 md:right-10 md:top-10">
+            <header className="relative z-20 w-full flex flex-col items-center pt-6 sm:pt-8 md:pt-16 px-4 sm:px-6 text-center">
+                <div className="absolute right-3 top-3 sm:right-4 sm:top-4 md:right-8 md:top-8">
                     <Dropdown />
                 </div>
 
@@ -230,8 +231,8 @@ export default function Home() {
 
             <div className="absolute bottom-0 left-0 right-0 h-[15vh] bg-gradient-to-t from-[#080f1a]/80 to-transparent z-20 pointer-events-none" />
 
-            <div className="relative z-30 bottom-8 md:bottom-12 w-full max-w-md px-4 flex flex-col items-center">
-                <div className="w-full p-5 sm:p-6 rounded-2xl bg-[#080f1a]/60 border border-white/10 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4">
+            <div className="relative z-30 bottom-6 sm:bottom-8 md:bottom-12 w-full max-w-[min(92vw,32rem)] px-3 sm:px-4 pb-4 sm:pb-6 flex flex-col items-center">
+                <div className="w-full p-4 sm:p-6 rounded-2xl bg-[#080f1a]/60 border border-white/10 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4">
                     <p 
                         className="text-[11px] sm:text-xs font-bold tracking-[0.25em] uppercase text-cyan-400 text-center select-none"
                         style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}

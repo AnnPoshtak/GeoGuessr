@@ -120,7 +120,7 @@ function SinglePlayer() {
     }
 
     return (
-        <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
+        <div className="relative min-h-dvh w-full bg-[#080f1a] overflow-x-hidden select-none">
             {location && (
                 <StreetView
                     apiKey={apiKey}
@@ -151,7 +151,7 @@ function SinglePlayer() {
 
             {isEnded ? (
                 <button
-                    className="absolute z-40 bottom-6 right-6 md:right-12 rounded-xl w-[calc(100%-3rem)] sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
+                    className="absolute z-40 left-4 right-4 bottom-4 sm:left-auto sm:right-6 sm:bottom-6 rounded-xl w-auto sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
                     style={{
                         background: '#dc2626',
                         color: '#fff',
@@ -167,7 +167,7 @@ function SinglePlayer() {
                     submitGuess={submit}
                     moveNext={moveNext}
                     apiKey={apiKey}
-                    className="absolute z-30 bottom-6 right-6 p-1.5 w-[90%] h-1/3 sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
+                    className="absolute z-30 left-3 right-3 bottom-3 sm:left-auto sm:right-6 sm:bottom-6 p-1.5 w-auto h-[34vh] min-h-[220px] sm:w-80 sm:h-56 md:w-96 md:h-64 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out sm:hover:w-[450px] sm:hover:h-[320px]"
                 >
                     <Distance
                         path={guessLocation && guessSubmitResponse?.target ? [guessLocation, guessSubmitResponse.target] : []}
@@ -175,7 +175,7 @@ function SinglePlayer() {
                     />
 
                     {guessSubmitResponse && (
-                        <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center min-w-[150px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
+                        <div className="absolute rounded-xl bg-[#080f1a]/95 border border-cyan-500/30 text-white p-3 bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center w-[calc(100%-1.5rem)] max-w-[220px] sm:min-w-[150px] shadow-lg backdrop-blur-sm animate-fade-in z-50">
                             <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
                                 <RiPinDistanceFill size={18} className="animate-pulse" />
                                 <span>Result</span>

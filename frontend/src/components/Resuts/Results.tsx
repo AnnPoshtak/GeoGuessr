@@ -16,8 +16,8 @@ export default function ScoreBoard({
     missedGuesses = 0 
 }: ScoreBoardProps) {
     return (
-        <div className="w-full bg-neutral-900/40 backdrop-blur-xl border border-neutral-800/80 rounded-2xl p-5 mb-6 shadow-2xl transition-all duration-300">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="w-full bg-neutral-900/40 backdrop-blur-xl border border-neutral-800/80 rounded-2xl p-4 sm:p-5 mb-6 shadow-2xl transition-all duration-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 <div className="relative overflow-hidden flex flex-col items-center justify-center p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.05)] col-span-2 sm:col-span-1">
                     <div className="absolute top-2 right-2 text-indigo-500/30">
                         <Trophy size={16} />

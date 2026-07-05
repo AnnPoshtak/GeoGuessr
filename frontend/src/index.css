@@ -1,7 +1,29 @@
 @import 'tailwindcss';
 
-#root, body {
-    @apply h-screen w-full;
+:root {
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: #080f1a;
+}
+
+#root {
+  min-height: 100dvh;
 }
 
 @layer components {
@@ -61,6 +83,14 @@
 
     .animate-pulse {
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .app-shell {
+        @apply min-h-dvh w-full overflow-x-hidden;
+    }
+
+    .glass-panel {
+        @apply rounded-2xl border border-white/10 bg-[#0c1524]/70 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.5)];
     }
 }
 
