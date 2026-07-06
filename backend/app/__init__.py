@@ -65,7 +65,6 @@ def create_app(config=DevelopmentConfig) -> Flask:
         )
 
     with app.app_context():
-        db.create_all()
         from .blueprints import oauth_bp, users_bp, auth_bp, game_bp
         scheduler.start()
         app.register_blueprint(oauth_bp, url_prefix='/oauth')
