@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     defeat_team_interval: int
     disconnect_event_interval: int
     leave_queue_event_interval: int 
+    autosubmit_interval: int
 
     @model_validator(mode='after')
     def _set_computed_fields(self):

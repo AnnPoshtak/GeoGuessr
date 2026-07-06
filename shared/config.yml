@@ -11,3 +11,4 @@ game_teams: { 0: 'red', 1: 'blue' }
 defeat_team_interval: 5
 disconnect_event_interval: 3
 leave_queue_event_interval: 3
+autosubmit_interval: 5

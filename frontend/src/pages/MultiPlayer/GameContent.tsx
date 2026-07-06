@@ -28,6 +28,7 @@ interface GameState {
     teams: Team[];
     roundData: RoundData | null;
     defeatTeamName: string | null;
+    autosubmitSeconds: number;
 }
 interface NewRoundData {
     target: MapLocation;
@@ -66,6 +67,7 @@ const GameContent = () => {
         teams: [],
         roundData: null,
         defeatTeamName: null,
+        autosubmitSeconds: -1,
     });
 
     useEffect(() => {
@@ -134,8 +136,13 @@ const GameContent = () => {
             }));
         }
 
+        const teamSubmittedCallback = (data: {seconds: number}) => {
+            setGameState((p) => ({...p, autosubmitSeconds: data.seconds}));
+        } 
+
         gameRoom.on('record_defeat_started', recordDefeatStartedCallback);
         gameRoom.on('record_defeat_cancelled', recordDefeatCancelledCallback);
+        gameRoom.on('team_submitted', teamSubmittedCallback);
 
         gameRoom.on('game_end', gameEndCallback);
         gameQueue.on('game_end', gameEndCallback);
@@ -145,14 +152,25 @@ const GameContent = () => {
             gameRoom.off('message', messageCallback);
             gameRoom.off('player_reconnected');
             gameRoom.off('player_disconnected');
-
+            
             gameRoom.off('record_defeat_started', recordDefeatStartedCallback);
             gameRoom.off('record_defeat_cancelled', recordDefeatCancelledCallback);
+            gameRoom.off('team_submitted', teamSubmittedCallback);
             gameRoom.off('new_round', newRoundCallback);
             gameRoom.off('game_end', gameEndCallback);
             gameQueue.off('game_end', gameEndCallback);
         };
     }, [isJoined, gameKey, map]);
+
+    useEffect(() => {
+        if (gameState.autosubmitSeconds <= 0) return;
+        const interval = setInterval(() => {
+            setGameState((p) => ({...p, autosubmitSeconds: p.autosubmitSeconds - 1}));
+        }, 1000);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [gameState]);
 
     const viewRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
@@ -164,7 +182,7 @@ const GameContent = () => {
                 viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
                 viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
             }
-            setGameState((p) => ({...p, target: data.target, teams: data.teams}))
+            setGameState((p) => ({...p, target: data.target, teams: data.teams, autosubmitSeconds: data.autosubmit_seconds}))
             return data;
         },
         enabled: isJoined && !gameState.isEnded,
@@ -195,6 +213,7 @@ const GameContent = () => {
                     target: data.target, 
                     playerScore: data.scores[user.id]
                 },
+                autosubmitSeconds: -1,
             })
         );
         map.fitBounds(bounds);
@@ -227,9 +246,15 @@ const GameContent = () => {
         <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
             <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-4 md:px-6">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-20 bg-neutral-800/80 text-white text-center rounded-b-[50%_100%] shadow-lg">
-                    <p>Round:</p>
-                    <h2 className="text-2xl">{game?.round || 1}</h2>
-                    <p>x{game?.multiplier || 1}</p>
+                    <div>
+                        <p>Round:</p>
+                        <h2 className="text-2xl">{game?.round || 1}</h2>
+                        <p>x{game?.multiplier || 1}</p>
+                        {gameState.autosubmitSeconds >= 0 && <div className="text-3xl">
+                        {gameState.autosubmitSeconds}
+                    </div>}
+                    </div>
+                    
                 </div>
                 {isJoined && (
                     <div className="flex justify-between items-start text-neutral-50 w-full *:pointer-events-auto">

@@ -7,4 +7,5 @@ export interface GameRoom {
     multiplier: number;
     target: StreetViewLocationFromApi;
     teams: Team[];
+    autosubmit_seconds: number;
 }

@@ -48,6 +48,7 @@ class GameRoomRepository(RedisRepository):
         location = get_random_location()
         game_mapping = {
             'id': game_id,
+            'key': game_key,
             'round': 1,
             'target': location,
             'player_ids': [],
@@ -106,6 +107,8 @@ class GameRoomRepository(RedisRepository):
     def get_player_score(self, game_key: str, player_id: int):
         game = self.get_game(game_key)
         player = self.get_player(game_key, player_id)
+        if self._is_null(player['guess']):
+            return 0
         distance = calculate_line_distance(game['target'], player['guess'])
         score = calculate_score(distance)
         return score
@@ -165,13 +168,20 @@ class GameRoomRepository(RedisRepository):
             teams.append(t)
         return teams
     
-    def _is_null(self, val) -> bool:
-        return val is None or val == 'null'
+    def player_submitted(self, game_key: str, player_id: int) -> bool:
+        return not self._is_null(self.redis.json().get(f'{game_key}:players:{player_id}', 'guess'))
+    
+    def team_submitted(self, game_key: str, team_name: str) -> bool:
+        team = self.get_team(game_key, team_name)
+        for p in team['players']:
+            if not self.player_submitted(game_key, p):
+                return False
+        return True
 
     def all_players_submitted(self, game_key: str) -> bool:
         players = self.get_player_ids(game_key)
         for p in players:
-            if self._is_null(self.redis.json().get(f'{game_key}:players:{p}', 'guess')):
+            if not self.player_submitted(game_key, p):
                 return False
         return True
     

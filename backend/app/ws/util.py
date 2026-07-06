@@ -37,7 +37,6 @@ def join_game_currently_in() -> bool:
             scheduler.remove_job(f"record_technical_defeat:{game_key}:{player['team']}")
             emit(
                 'record_defeat_cancelled',
-                broadcast=True,
                 to=game_key
             )
         except JobLookupError:

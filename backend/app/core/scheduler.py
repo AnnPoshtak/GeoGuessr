@@ -10,7 +10,7 @@ def record_technical_defeat(game_key: str, team: str) -> None:
         game = game_room.get_game(game_key)
         if not game or not 'teams' in game:
             return
-        teams = [t for t in game_room.get_teams() if team['name'] != team]
+        teams = [t for t in game_room.get_teams(game_key) if t['name'] != team]
         winning_team = game_room.get_winning_team(game_key, teams)
         emit(
             'game_end',
@@ -21,7 +21,6 @@ def record_technical_defeat(game_key: str, team: str) -> None:
                 'scores': game_room.get_scores(game_key),
             }, 
             to=game_key, 
-            broadcast=True,
             namespace='/game'
         )
         return game_room.end_game(game_key)
@@ -55,14 +54,12 @@ def send_disconnect_event(game_key: str, user_id: int):
                 emit(
                     'record_defeat_started',
                     {'team': team},
-                    broadcast=True,
                     to=game_key,
                     namespace='/game'
                 )
             emit(
                 'player_disconnected', 
                 user_public_schema.dump(user),
-                broadcast=True,
                 to=game_key,
                 namespace='/game'
             )
@@ -84,6 +81,5 @@ def send_queue_leave_event(user_id: int):
                 'queue': queue
             }, 
             to=key, 
-            broadcast=True,
             namespace='/queue'
         )
