@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { User, ChevronDown, LogOut, LogIn } from 'lucide-react';
 import { usersApi, authApi } from '@/api';
+import type { User as AppUser } from '@/interfaces/Player';
 import VolumeControl from '../VolumeControl/VolumeControl';
 
 export const Dropdown = () => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -52,11 +53,11 @@ export const Dropdown = () => {
   }
 
   return (
-    <div className="relative inline-block font-sans text-white">
+    <div className="relative z-50 inline-flex max-w-[calc(100vw-1.5rem)] font-sans text-white">
       
       <button 
         onClick={toggleDropdown}
-        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all duration-200 text-xs font-semibold tracking-wider uppercase backdrop-blur-md shadow-lg
+        className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl border transition-all duration-200 text-xs font-semibold tracking-wider uppercase backdrop-blur-md shadow-lg
           ${isOpen 
             ? 'border-white/30 bg-white/20' 
             : 'border-white/15 bg-white/5 hover:bg-white/12 hover:border-white/25'
@@ -72,7 +73,7 @@ export const Dropdown = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 p-5 rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-50 text-left animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-[min(88vw,16rem)] p-4 sm:p-5 rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl z-50 text-left animate-in fade-in zoom-in-95 duration-150">
           {user ? (
             <div>
               <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1">
@@ -111,6 +112,13 @@ export const Dropdown = () => {
                 <LogIn size={14} className="stroke-[2.5]" />
                 Log In with Google
               </button>
+
+              <div className="h-[1px] bg-white/10 my-3" />
+              
+              <div className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1">
+                Music settings
+              </div>
+              <VolumeControl />
             </div>
           )}
         </div>

@@ -28,8 +28,8 @@ const TeamBar = ({ team, rtl, defeatTeamName }: TeamBarProps) => {
 
     return (
         <div 
-            className={`flex flex-col w-72 bg-[#0c1524]/85 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ${
-                rtl ? "mr-16" : ""
+            className={`flex flex-col w-full max-w-72 md:w-72 bg-[#0c1524]/85 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+                rtl ? "md:mr-16" : ""
             }`}
         >
             <div className="w-full flex flex-col gap-2.5 mb-3">

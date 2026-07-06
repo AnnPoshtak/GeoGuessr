@@ -24,7 +24,7 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-4xl bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-full max-w-4xl bg-neutral-900 border border-neutral-800 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                     <h2 className="text-xl font-bold text-neutral-100 tracking-wide">{title}</h2>
                     <button 
@@ -79,7 +79,7 @@ function MenuButton() {
             </button>
 
             {isOpen && (
-                <div className="w-60 bg-neutral-900 border border-neutral-800 rounded-xl p-2 flex flex-col gap-1 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="w-[min(85vw,15rem)] bg-neutral-900 border border-neutral-800 rounded-xl p-2 flex flex-col gap-1 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
                     
                     <button 
                         onClick={() => {
