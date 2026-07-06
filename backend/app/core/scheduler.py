@@ -1,23 +1,24 @@
 import datetime
-from flask_socketio import emit, leave_room
+from flask_socketio import emit
 from app.config import settings
 from app.extensions import scheduler, db
 from app.models import UserModel
 
 def record_technical_defeat(game_key: str, team: str) -> None:
     from app import game_room
+    from app.ws.util import get_full_teams_data
     with scheduler.app.app_context():
         game = game_room.get_game(game_key)
         if not game or not 'teams' in game:
             return
-        teams = [t for t in game_room.get_teams(game_key) if t['name'] != team]
+        teams = [t for t in get_full_teams_data(game_key) if t['name'] != team]
         winning_team = game_room.get_winning_team(game_key, teams)
         emit(
             'game_end',
             {
                 'winner': winning_team,
                 'target': game['target'],
-                'teams': game_room.get_teams(game_key),
+                'teams': get_full_teams_data(game_key),
                 'scores': game_room.get_scores(game_key),
             }, 
             to=game_key, 

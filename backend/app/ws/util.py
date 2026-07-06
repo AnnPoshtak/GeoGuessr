@@ -54,3 +54,10 @@ def get_full_player_data(game_key: str, player_id: int) -> dict:
     player_data = game_room.get_player(game_key, player_id)
     player_data.update(user_public_schema.dump(u))
     return full_player_data_schema.dump(player_data)
+
+def get_full_teams_data(game_key: str) -> list[dict]:
+    teams = game_room.get_teams(game_key)
+    for i, t in enumerate(teams):
+        teams[i]['players'] = [get_full_player_data(game_key, p['id']) for p in t['players']]
+
+    return teams
