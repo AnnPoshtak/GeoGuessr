@@ -2,19 +2,15 @@ import { useMultiplayerContext } from '@/context/MultiplayerContext';
 import { gameQueue, gameRoom } from '@/ws/wsClient';
 import GameContent from './GameContent';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 function MultiplayerGame() {
     const { isJoined, setIsJoined } = useMultiplayerContext();
-    const navigate = useNavigate();
 
     const handleJoinGame = () => {
         setIsJoined(true);
     };
 
-    const leaveGame = () => {
-        navigate('/multiplayer');
-    };
+    // navigate back to menu
 
     useEffect(() => {
         gameRoom.on('game_joined', () => {

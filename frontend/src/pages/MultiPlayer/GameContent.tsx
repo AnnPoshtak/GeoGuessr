@@ -20,7 +20,7 @@ import { RiPinDistanceFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import TeamBar from "./components/TeamBar";
-import { usersApi } from "@/api";
+import { useUser } from "@/context/UserContext.tsx";
 
 interface GameState {
     isEnded: boolean;
@@ -97,12 +97,7 @@ const GameContent = () => {
         handleNewRound(data);
         setGameState(p => ({ ...p, isEnded: true, winner: data.winner }));
     }
-    // TODO: when we refactor authentication and will be using contexts/rtk replace this
-    const {data: user} = useQuery({
-        queryKey: ['current-user'],
-        queryFn: usersApi.getCurrentUser,
-        retry: false,
-    })
+    const { user } = useUser();
     
     useEffect(() => {
         if (!isJoined) return;

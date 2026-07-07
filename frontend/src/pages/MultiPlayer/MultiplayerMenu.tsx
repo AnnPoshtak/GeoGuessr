@@ -1,22 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayerContext } from '@/context/MultiplayerContext';
 import { gameQueue, gameRoom } from '@/ws/wsClient';
-    import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { usersApi } from '@/api';
+import { useUser } from '@/context/UserContext.tsx';
 import Queue from './Queue';
 import { useQuery } from '@tanstack/react-query';
 import type { GameQueue } from '@/interfaces/GameQueue';
 import fetchQueue from '@/ws/fetchQueue';
 import queryClient from '@/api/queryClient';
-import type { User } from '@/interfaces/Player';
 
 export default function MultiplayerMenu() {
     const navigate = useNavigate();
     const { setIsJoined } = useMultiplayerContext();
     
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { user } = useUser();
     const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
     
     const { data: queue } = useQuery<GameQueue | null>({
@@ -35,28 +33,12 @@ export default function MultiplayerMenu() {
         }
     }, [queue]);
     
-    const checkUserAuth = async () => {
-        try {
-            const userData = await usersApi.getCurrentUser();
-            setUser(userData);
-        } catch (error) {
-            console.error('Authentication error:', error);
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        checkUserAuth();
-    }, []);
-
-    useEffect(() => {
-        if (!loading && !user) {
-            navigate("/");
-            toast.info("To play in multiplayer mode, you need to log in to your account");
+        if (user === null) {
+            navigate('/');
+            toast.info('To play in multiplayer mode, you need to log in to your account');
         }
-    }, [loading, user, navigate]);
+    }, [user, navigate]);
 
     const handleSelectMode = (mode: '1v1' | '2v2') => {
         setSelectedMode(mode);
@@ -97,17 +79,14 @@ export default function MultiplayerMenu() {
         };
     }, []);
 
-    if (loading) {
+    if (user === undefined) {
         return (
             <div className="flex min-h-dvh w-full items-center justify-center bg-[#080f1a] text-white">
                 <div className="tracking-widest uppercase animate-pulse">Loading...</div>
             </div>
         );
     }
-
-    if (!user) {
-        return null;
-    }
+    if (user === null) return null;
 
     if (selectedMode) {
         return (

@@ -10,14 +10,14 @@ import { useGameContext } from "@/context/GameContext";
 import type { MapLocation } from "@/interfaces/MapLocation";
 import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { RiPinDistanceFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const navigate = useNavigate();
-    const [isEnded, setIsEnded] = useState(false);
+    const isEnded = false;
 
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
         queryKey: ['randomLocation'],

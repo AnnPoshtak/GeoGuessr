@@ -1,54 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { User, ChevronDown, LogOut, LogIn } from 'lucide-react';
-import { usersApi, authApi } from '@/api';
-import type { User as AppUser } from '@/interfaces/Player';
+import { useUser } from '@/context/UserContext.tsx';
 import VolumeControl from '../VolumeControl/VolumeControl';
 
 export const Dropdown = () => {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, login, logout, refreshUser } = useUser();
   const [isOpen, setIsOpen] = useState(false);
 
-  const checkUserAuth = async () => {
-    try {
-      const userData = await usersApi.getCurrentUser();
-      setUser(userData);
-    } catch (error) {
-      console.error('Authentication error:', error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    checkUserAuth();
-  }, []);
+    if (isOpen) refreshUser();
+  }, [isOpen, refreshUser]);
 
-  useEffect(() => {
-    if (isOpen) {
-      checkUserAuth();
-    }
-  }, [isOpen]);
+  const toggleDropdown = () => setIsOpen((prev: boolean) => !prev);
 
-  const toggleDropdown = () => setIsOpen(prevState => !prevState);
-
-  const handleLogin = () => {
-    window.location.href = authApi.getOAuthUrl('google');
-  };
+  const handleLogin = () => login();
 
   const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setUser(null);
-      setIsOpen(false);
-    }
+    await logout();
+    setIsOpen(false);
   };
 
-  if (loading) {
+  if (user === undefined) {
     return <div className="text-white/40 text-xs font-medium tracking-widest uppercase">Loading...</div>;
   }
 
