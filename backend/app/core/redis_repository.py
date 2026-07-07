@@ -16,3 +16,6 @@ class RedisRepository:
         if not key:
             raise ValueError('key has to be provided!')
         self.key = key
+    
+    def _is_null(self, val) -> bool:
+        return val is None or val == 'null'

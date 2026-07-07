@@ -7,6 +7,7 @@ const config = {
     gameEndAutomoveCooldown: ymlConfig.game_end_automove_cooldown,
     startingPlayerHealth: ymlConfig.starting_player_health,
     defeatTeamInterval: ymlConfig.defeat_team_interval,
+    autosubmitInterval: ymlConfig.autosubmit_interval,
 };
 
 export default config;

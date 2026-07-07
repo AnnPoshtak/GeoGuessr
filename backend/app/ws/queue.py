@@ -67,12 +67,12 @@ class QueueNamespace(Namespace):
         if game_key:
             emit('game_started', {
                 'game_key': game_key
-            }, to=queue_key, broadcast=True)
+            }, to=queue_key)
             return close_room(queue_key)
         
         emit('queue_joined', {
             'queue': queue
-        }, to=queue_key, broadcast=True)
+        }, to=queue_key)
     
     @authenticated_only
     def on_leave(self):
@@ -83,5 +83,5 @@ class QueueNamespace(Namespace):
         queue = game_queue.get_queue(key)
         emit('queue_left', {
             'queue': queue
-        }, to=key, broadcast=True)
+        }, to=key)
         leave_room(key)
