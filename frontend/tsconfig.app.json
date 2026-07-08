@@ -40,4 +40,8 @@
     "src",
     "src/ws"
   ],
+  "exclude": [
+    "src/tests",
+    "src/**/*.test.*"
+  ]
 }

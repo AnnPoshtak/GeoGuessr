@@ -1,5 +1,4 @@
 import config from "@/config";
-import type { Player } from "@/interfaces/Player";
 import type { Team } from "@/interfaces/Team";
 import { useEffect, useState } from "react";
 import { RiSignalWifiErrorLine, RiUser2Fill } from "react-icons/ri";
