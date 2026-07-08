@@ -84,6 +84,8 @@ class GameNamespace(Namespace):
             run_time = autosubmit_job.next_run_time.replace(tzinfo=datetime.timezone.utc)
             seconds = round((run_time - datetime.datetime.now(tz=datetime.timezone.utc)).total_seconds())
         game['autosubmit_seconds'] = seconds
+        player = game_room.get_player(game_key, current_user.id)
+        game['guess'] = player['guess']
         return {
             'game': game
         }

@@ -1,3 +1,4 @@
+import type { MapLocation } from "./MapLocation";
 import type { StreetViewLocationFromApi } from "./StreetViewLocationFromApi";
 import type { Team } from "./Team";
 
@@ -8,4 +9,5 @@ export interface GameRoom {
     target: StreetViewLocationFromApi;
     teams: Team[];
     autosubmit_seconds: number;
+    guess: MapLocation | null;
 }

@@ -1,5 +1,6 @@
 import os
 os.environ['SECRET_KEY'] = 'test-secret-key'
+os.environ['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
 os.environ['CORS_ORIGINS'] = 'http://localhost:3000'
 os.environ['FRONTEND_URL'] = 'http://localhost:3000'
 os.environ['GOOGLE_CLIENT_ID'] = 'test-google-client-id'

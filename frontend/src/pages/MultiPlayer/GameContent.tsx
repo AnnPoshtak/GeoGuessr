@@ -29,6 +29,7 @@ interface GameState {
     roundData: RoundData | null;
     defeatTeamName: string | null;
     autosubmitSeconds: number;
+    guesses: MapLocation[];
 }
 interface NewRoundData {
     target: MapLocation;
@@ -44,7 +45,6 @@ interface EndGameData extends NewRoundData {
 }
 
 const GameContent = () => {
-    const [allGuesses, setAllGuesses] = useState<MapLocation[]>([]);
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { gameKey, isJoined } = useMultiplayerContext();
 
@@ -68,6 +68,7 @@ const GameContent = () => {
         roundData: null,
         defeatTeamName: null,
         autosubmitSeconds: -1,
+        guesses: [],
     });
 
     useEffect(() => {
@@ -182,7 +183,15 @@ const GameContent = () => {
                 viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
                 viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
             }
-            setGameState((p) => ({...p, target: data.target, teams: data.teams, autosubmitSeconds: data.autosubmit_seconds}))
+            setGuessLocation(data.guess);
+            setIsSubmitted(!!data.guess);
+            setGameState((p) => ({
+                ...p, 
+                target: data.target, 
+                teams: data.teams, 
+                autosubmitSeconds: data.autosubmit_seconds,
+                isSubmitted: !!data.guess,
+            }))
             return data;
         },
         enabled: isJoined && !gameState.isEnded,
@@ -201,10 +210,11 @@ const GameContent = () => {
             for (let pl of t.players) {
                 const guess = pl.guess;
                 if (!guess) continue;
-                setAllGuesses(p => [...p, guess]);
+                setGameState(p => ({...p, guesses: [...p.guesses, guess]}));
                 bounds.extend(guess);
             }
         });
+        setIsSubmitted(true);
         bounds.extend(data.target);
         setGameState((p) => ({
                 ...p, 
@@ -220,25 +230,27 @@ const GameContent = () => {
         setTimeout(async () => {
             await queryClient.invalidateQueries({ queryKey: ['game', gameKey] });
             setGuessLocation(null);
+            setIsSubmitted(false);
             setGameState((p) => ({
                     ...p, 
                     roundData: null,
+                    guesses: [],
+                    isSubmitted: false,
                 })
             );
-            setIsSubmitted(false);
-            setAllGuesses([]);
         }, config.roundAutomoveCooldown);
     };
 
     const submit = () => {
-        if (!guessLocation || isSubmitted) return;
+        if (!guessLocation) return;
         submitGuess(guessLocation);
         setIsSubmitted(true);
+        setGameState((p) => ({...p}));
     };
 
     const getStatusColor = () => {
         if (isAllReady) return 'text-emerald-400';
-        if (isSubmitted) return 'text-amber-400';
+        if (guessLocation) return 'text-amber-400';
         return 'text-neutral-400';
     };
 
@@ -310,7 +322,7 @@ const GameContent = () => {
                         {gameState.roundData?.target ? (
                             <>
                                 <TargetMarker position={gameState.roundData.target} />
-                                {allGuesses.map((g, idx) => (
+                                {gameState.guesses.map((g, idx) => (
                                     <div key={idx}>
                                         <Distance
                                             path={g && gameState.roundData?.target ? [g, gameState.roundData.target] : []}
