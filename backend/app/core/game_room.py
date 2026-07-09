@@ -260,6 +260,20 @@ class GameRoomRepository(RedisRepository):
             self.redis.json().set(f'{game_key}:players:{p}', 'guess', None)
         self.update_game_expiry(game_key)
         return curr_round
+    
+    def get_temp_target(self, game_key: str) -> dict | None:
+        return self.redis.json().get(f'{game_key}:temp_target')
+    
+    def get_temp_target_ttl(self, game_key: str) -> float | None:
+        ttl = self.redis.ttl(f'{game_key}:temp_target')
+        return ttl if ttl >= 0 else None
+    
+    def set_temp_target(self, game_key: str) -> dict:
+        '''Sets a temprorary target which is returned between the round callbacks'''
+        target = self.get_game(game_key)['target']
+        self.redis.json().set(f'{game_key}:temp_target', '$', target)
+        self.redis.expire(f'{game_key}:temp_target', settings.round_automove_cooldown)
+        return target
 
     def end_game(self, game_key: str) -> None:
         player_ids = self.get_player_ids(game_key)

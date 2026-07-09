@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import TeamBar from "./components/TeamBar";
 import { useUser } from "@/context/UserContext.tsx";
+import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 
 interface GameState {
     isEnded: boolean;
@@ -136,9 +137,18 @@ const GameContent = () => {
             setGameState((p) => ({...p, autosubmitSeconds: data.seconds}));
         } 
 
+        const realTargetCallback = (data: {target: StreetViewLocationFromApi}) => {
+            console.log(data.target, viewRef.current);
+            if (viewRef.current) {
+                viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
+                viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
+            }
+        } 
+
         gameRoom.on('record_defeat_started', recordDefeatStartedCallback);
         gameRoom.on('record_defeat_cancelled', recordDefeatCancelledCallback);
         gameRoom.on('team_submitted', teamSubmittedCallback);
+        gameRoom.on('real_target', realTargetCallback);
 
         gameRoom.on('game_end', gameEndCallback);
         gameQueue.on('game_end', gameEndCallback);
@@ -154,6 +164,7 @@ const GameContent = () => {
             gameRoom.off('team_submitted', teamSubmittedCallback);
             gameRoom.off('new_round', newRoundCallback);
             gameRoom.off('game_end', gameEndCallback);
+            gameRoom.off('real_target', realTargetCallback);
             gameQueue.off('game_end', gameEndCallback);
         };
     }, [isJoined, gameKey, map]);

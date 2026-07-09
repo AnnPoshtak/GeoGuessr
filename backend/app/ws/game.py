@@ -1,10 +1,11 @@
 from flask_socketio import Namespace, emit, send
+from flask import request
 from app import game_room
 from app.config import settings
 from .util import join_game, authenticated_only, join_game_currently_in, get_full_player_data, \
 get_full_teams_data
 from flask_login import current_user
-from app.core.scheduler import scheduler, send_disconnect_event
+from app.core.scheduler import scheduler, send_disconnect_event, send_real_target
 import datetime
 
 def move_next_round(game_key: str):
@@ -36,6 +37,7 @@ def move_next_round(game_key: str):
                         'scores': scores,
                     }, to=game_key,  namespace='/game')
                     return game_room.end_game(game_key)
+        game_room.set_temp_target(game_key)
         game_room.move_next_round(game_key)
         emit('new_round', {
             'target': target,
@@ -51,15 +53,13 @@ class GameNamespace(Namespace):
     def on_disconnect(self, reason):
         if not current_user.is_authenticated:
             return
-        run_time = datetime.datetime.now() + datetime.timedelta(seconds=3)
+        run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=3)
         game_key = game_room.get_current_game(current_user.id)
         scheduler.add_job(
             f'send_disconnect_event:{current_user.id}',
             send_disconnect_event, 
             args=(game_key, current_user.id),
             next_run_time=run_time,
-            coalesce=True,
-            max_instances=1,
             replace_existing=True
         )
 
@@ -69,6 +69,19 @@ class GameNamespace(Namespace):
         if not game_key:
             return send('You have to be part of the ongoing game')
         game = game_room.get_game(game_key)
+        temp_target = game_room.get_temp_target(game_key)
+        if temp_target:
+            game['target'] = temp_target
+            if not scheduler.get_job(f'send_real_target:{game_key}'):
+                ttl = game_room.get_temp_target_ttl(game_key) or 1
+                run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=ttl)
+                scheduler.add_job(
+                    f'send_real_target:{game_key}',
+                    send_real_target,
+                    args=(request.sid, game_key),
+                    next_run_time=run_time,
+                    replace_existing=False
+                )
         game['teams'] = get_full_teams_data(game_key)
         teams = []
         for t in game['teams']:
@@ -114,8 +127,6 @@ class GameNamespace(Namespace):
                 move_next_round, 
                 args=(game_key,),
                 next_run_time=run_time,
-                coalesce=True,
-                max_instances=1,
                 replace_existing=True
             )
             emit('team_submitted', {

@@ -25,14 +25,12 @@ class QueueNamespace(Namespace):
     def on_disconnect(self, reason):
         if not current_user.is_authenticated:
             return
-        run_time = datetime.datetime.now() + datetime.timedelta(seconds=settings.leave_queue_event_interval)
+        run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.leave_queue_event_interval)
         scheduler.add_job(
             f'send_queue_leave_event:{current_user.id}',
             send_queue_leave_event, 
             args=(current_user.id,),
             next_run_time=run_time,
-            coalesce=True,
-            max_instances=1,
             replace_existing=True
         )
 

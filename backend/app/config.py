@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     }
     FRONTEND_OAUTH_CALLBACK_URL: str = ""
     SESSION_TYPE: str = 'redis'
+    SCHEDULER_TIMEZONE: str = 'UTC'
+    SCHEDULER_JOB_DEFAULTS: dict = {
+        'misfire_grace_time': 5,
+        'coalesce': True,
+        'max_instances': 1,
+    }
     
     score_calculation_scale: int
     min_players: int
@@ -54,12 +60,14 @@ class Settings(BaseSettings):
     disconnect_event_interval: int
     leave_queue_event_interval: int 
     autosubmit_interval: int
+    round_automove_cooldown: int
 
     @model_validator(mode='after')
     def _set_computed_fields(self):
         self.FRONTEND_OAUTH_CALLBACK_URL = f"{self.FRONTEND_URL}/oauth/callback/"
         if not self.CORS_ORIGINS:
             self.CORS_ORIGINS = [os.environ.get('CORS_ORIGINS', 'http://localhost:5173').strip("'\"")]
+        self.round_automove_cooldown = int(self.round_automove_cooldown / 1000)
         return self
 
     @classmethod
