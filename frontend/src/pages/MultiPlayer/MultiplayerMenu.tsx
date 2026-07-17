@@ -9,14 +9,17 @@ import { useQuery } from '@tanstack/react-query';
 import type { GameQueue } from '@/interfaces/GameQueue';
 import fetchQueue from '@/ws/fetchQueue';
 import queryClient from '@/api/queryClient';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { WifiOff } from 'lucide-react';
 
 export default function MultiplayerMenu() {
+    const isOnline = useOnlineStatus();
     const navigate = useNavigate();
     const { setIsJoined } = useMultiplayerContext();
-    
+
     const { user } = useUser();
     const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
-    
+
     const { data: queue } = useQuery<GameQueue | null>({
         queryKey: ['queue'],
         queryFn: async () => {
@@ -32,7 +35,7 @@ export default function MultiplayerMenu() {
             setSelectedMode(queue.player_count === 2 ? '1v1' : '2v2');
         }
     }, [queue]);
-    
+
     useEffect(() => {
         if (user === null) {
             navigate('/');
@@ -91,6 +94,11 @@ export default function MultiplayerMenu() {
     if (selectedMode) {
         return (
             <div className="relative app-shell flex flex-col items-center bg-[#080f1a] font-sans overflow-x-hidden text-white">
+                {!isOnline && (
+                    <div className="absolute top-4 right-4 z-50 animate-pulse">
+                        <WifiOff className="h-6 w-6 text-red-500" />
+                    </div>
+                )}
                 <div className="absolute inset-0 pointer-events-none" style={{
                     backgroundImage: `
                       radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.8) 0%, transparent 100%),
@@ -126,7 +134,7 @@ export default function MultiplayerMenu() {
 
                 <main className="relative z-20 flex-1 w-full max-w-4xl flex flex-col items-center justify-center px-4 sm:px-6 pb-10 sm:pb-12">
                     <div className="w-full max-w-xl bg-[#0c1524]/60 border border-white/10 rounded-2xl p-5 sm:p-6 md:p-8 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
-                        <Queue queue={queue} join={joinQueue} leave={leaveQueue}/>
+                        <Queue queue={queue} join={joinQueue} leave={leaveQueue} />
                     </div>
                 </main>
             </div>

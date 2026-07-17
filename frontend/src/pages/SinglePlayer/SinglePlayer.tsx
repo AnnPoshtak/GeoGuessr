@@ -10,13 +10,16 @@ import { useGameContext } from "@/context/GameContext";
 import type { MapLocation } from "@/interfaces/MapLocation";
 import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { WifiOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { RiPinDistanceFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 function SinglePlayer() {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const navigate = useNavigate();
+    const isOnline = useOnlineStatus();
     const isEnded = false;
 
     const { data: location, isPending, isError } = useQuery<StreetViewLocationFromApi>({
@@ -121,6 +124,11 @@ function SinglePlayer() {
 
     return (
         <div className="relative min-h-dvh w-full bg-[#080f1a] overflow-x-hidden select-none">
+            {!isOnline && (
+                <div className="absolute top-[50%] left-[50%]  z-50 animate-pulse">
+                    <WifiOff className="h-6 w-6 text-red-500" />
+                </div>
+            )}
             {location && (
                 <StreetView
                     apiKey={apiKey}
@@ -180,7 +188,7 @@ function SinglePlayer() {
                                 <RiPinDistanceFill size={18} className="animate-pulse" />
                                 <span>Result</span>
                             </div>
-                            
+
                             <div className="text-sm font-bold mt-1 text-neutral-50">
                                 {guessSubmitResponse.distance > 1000
                                     ? `${Math.floor(guessSubmitResponse.distance / 1000)} km`
