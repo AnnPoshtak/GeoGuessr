@@ -155,7 +155,7 @@ export default function Home() {
 
     return (
         <div 
-            className="relative app-shell flex flex-col items-center justify-between bg-[#080f1a] font-sans overflow-x-hidden text-white"
+            className="relative w-screen h-screen overflow-hidden app-shell flex flex-col items-center justify-between bg-[#080f1a] font-sans text-white"
             onMouseMove={handleMouseMove}
         >
             <div className="absolute inset-0 pointer-events-none" style={{
