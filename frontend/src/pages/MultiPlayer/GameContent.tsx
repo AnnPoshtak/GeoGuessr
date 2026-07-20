@@ -16,22 +16,23 @@ import submitGuess from "@/ws/submitGuess";
 import { gameQueue, gameRoom } from "@/ws/wsClient";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { RiPinDistanceFill } from "react-icons/ri";
-import { useNavigate } from "react-router-dom";
+import { MapPin } from "lucide-react";
 import { toast } from "sonner";
-import TeamBar from "./components/TeamBar";
+import GameEndScreen from "./components/GameEndScreen";
 import { useUser } from "@/context/UserContext.tsx";
 import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
+import { useNavigate } from "react-router-dom";
 
 interface GameState {
     isEnded: boolean;
-    winner: Team | null;
+    winner: string | null;
     teams: Team[];
     roundData: RoundData | null;
     defeatTeamName: string | null;
     currentCooldown: number;
     cooldownMessage: string | null;
     guesses: MapLocation[];
+    scores?: Record<number, number>;
 }
 interface NewRoundData {
     target: MapLocation;
@@ -43,7 +44,7 @@ interface RoundData {
     playerScore: number;
 }
 interface EndGameData extends NewRoundData {
-    winner: Team;
+    winner: string | { teamName: string };
 }
 
 const GameContent = () => {
@@ -62,7 +63,7 @@ const GameContent = () => {
         )}));
     };
 
-    const navigate = useNavigate();
+
     const [gameState, setGameState] = useState<GameState>({
         isEnded: false,
         winner: null,
@@ -74,20 +75,10 @@ const GameContent = () => {
         guesses: [],
     });
 
-    useEffect(() => {
-        if (!gameState.isEnded) return;
-        const timeout = setTimeout(leaveGame, config.gameEndAutomoveCooldown);
-        return () => {
-            clearTimeout(timeout);
-        };
-    }, [gameState, navigate]);
-
     const { guessLocation, map, setGuessLocation, isSubmitted, setIsSubmitted } = useGameContext();
 
-    const totalPlayersCount = gameState.teams.length;
-    const submittedPlayersCount = gameState.teams.filter(t => 
-        t.players.some(p => !!p.guess)
-    ).length;
+    const totalPlayersCount = gameState.teams.reduce((acc, t) => acc + t.players.length, 0);
+    const submittedPlayersCount = gameState.teams.reduce((acc, t) => acc + t.players.filter(p => !!p.guess).length, 0);
 
     const isAllReady = submittedPlayersCount === totalPlayersCount && totalPlayersCount > 0;
 
@@ -101,10 +92,12 @@ const GameContent = () => {
 
     function gameEndCallback(data: EndGameData) {
         handleNewRound(data);
-        setGameState(p => ({ ...p, isEnded: true, winner: data.winner }));
+        const winnerName = typeof data.winner === 'string' ? data.winner : data.winner?.teamName ?? null;
+        setGameState(p => ({ ...p, isEnded: true, winner: winnerName }));
     }
     const { user } = useUser();
-    
+    const navigate = useNavigate();
+
     useEffect(() => {
         if (!isJoined) return;
 
@@ -134,7 +127,7 @@ const GameContent = () => {
                 ...p,
                 defeatTeamName: null,
             }));
-        }
+        };
 
         const teamSubmittedCallback = (data: {current_cooldown: number, cooldown_message: string}) => {
             setGameState((p) => ({...p, currentCooldown: data.current_cooldown, cooldownMessage: data.cooldown_message}));
@@ -152,7 +145,7 @@ const GameContent = () => {
                 viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
                 viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
             }
-        } 
+        };
 
         gameRoom.on('record_defeat_started', recordDefeatStartedCallback);
         gameRoom.on('record_defeat_cancelled', recordDefeatCancelledCallback);
@@ -169,7 +162,7 @@ const GameContent = () => {
             gameRoom.off('message', messageCallback);
             gameRoom.off('player_reconnected');
             gameRoom.off('player_disconnected');
-            
+
             gameRoom.off('record_defeat_started', recordDefeatStartedCallback);
             gameRoom.off('record_defeat_cancelled', recordDefeatCancelledCallback);
             gameRoom.off('inactivity_kick_notification', inactivityKickNotificationCallback);
@@ -221,10 +214,6 @@ const GameContent = () => {
         staleTime: Infinity
     });
 
-    const leaveGame = () => {
-        navigate('/');
-    };
-
     const handleNewRound = (data: NewRoundData) => {
         if (!map) return;
         if (!user) return;
@@ -242,9 +231,10 @@ const GameContent = () => {
         setGameState((p) => ({
                 ...p, 
                 teams: data.teams,
+                scores: data.scores,
                 roundData: {
                     target: data.target, 
-                    playerScore: data.scores[user.id]
+                    playerScore: data.scores[user.id] ?? 0
                 },
                 currentCooldown: -1,
                 cooldownMessage: null,
@@ -280,27 +270,75 @@ const GameContent = () => {
 
     return (
         <div className="w-full h-full absolute inset-0 bg-[#080f1a] overflow-hidden select-none">
-            <div className="absolute pointer-events-none z-40 top-0 w-full pt-4 px-4 md:px-6">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-20 bg-neutral-800/80 text-white text-center rounded-b-[50%_100%] shadow-lg">
-                    <div>
-                        <p>Round:</p>
-                        <h2 className="text-2xl">{game?.round || 1}</h2>
-                        <p>x{game?.multiplier || 1}</p>
-                        {gameState.currentCooldown > 0 && <div>
-                            {gameState.cooldownMessage && <p className="text-sm">{gameState.cooldownMessage}</p>}
-                            <span className="text-3xl">{gameState.currentCooldown}</span>
-                        </div>}
+            {isJoined && (
+                <div className="absolute top-0 left-0 right-0 z-40 w-full px-3 md:px-4 py-2 border-b border-white/5 bg-neutral-950/40 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-2 w-full">
+                        {/* Left Team */}
+                        {gameState.teams[0] && (
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-bold text-cyan-400 truncate">
+                                        {gameState.teams[0].name}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="text-xs font-semibold text-rose-400">
+                                            {gameState.teams[0].health}/{ config.startingPlayerHealth * gameState.teams[0].players.length}
+                                        </div>
+                                        <div className="h-1 flex-1 min-w-0 bg-white/5 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-rose-500 to-red-500 transition-all duration-500" 
+                                                style={{ width: `${Math.max(0, Math.min(100, (gameState.teams[0].health / (config.startingPlayerHealth * gameState.teams[0].players.length)) * 100))}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {gameState.defeatTeamName === gameState.teams[0].name && (
+                                        <div className="text-xs font-bold text-red-500 mt-1">
+                                            Defeat in {gameState.currentCooldown}s
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Center - Round & Timer */}
+                        <div className="flex flex-col items-center gap-1 px-2">
+                            <div className="text-xs font-bold text-cyan-300">Round {game?.round}</div>
+                            <div className="text-sm font-black text-cyan-300">X{game?.multiplier || 1}</div>
+                            {gameState.currentCooldown > 0 && <div>
+                                {gameState.cooldownMessage && <p className="text-sm">{gameState.cooldownMessage}</p>}
+                                <span className="text-3xl">{gameState.currentCooldown}</span>
+                            </div>}
+                        </div>
+
+                        {/* Right Team */}
+                        {gameState.teams[1] && (
+                            <div className="flex items-center gap-2 min-w-0 flex-1 flex-row-reverse">
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-[11px] font-bold text-cyan-400 truncate text-right">
+                                        {gameState.teams[1].name}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-row-reverse">
+                                        <div className="text-xs font-semibold text-rose-400">
+                                            {gameState.teams[1].health}/{config.startingPlayerHealth * gameState.teams[1].players.length}
+                                        </div>
+                                        <div className="h-1 flex-1 min-w-0 bg-white/5 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-rose-500 to-red-500 transition-all duration-500" 
+                                                style={{ width: `${Math.max(0, Math.min(100, (gameState.teams[1].health / (config.startingPlayerHealth * gameState.teams[1].players.length)) * 100))}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    {gameState.defeatTeamName === gameState.teams[1].name && (
+                                        <div className="text-xs font-bold text-red-500 mt-1 text-right">
+                                            Defeat in {gameState.currentCooldown}s
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    
                 </div>
-                {isJoined && (
-                    <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-start text-neutral-50 w-full *:pointer-events-auto">
-                        {gameState.teams.map((t, index) => (
-                            <TeamBar key={index} rtl={index % 2 !== 0} team={t} defeatTeamName={gameState.defeatTeamName} />
-                        ))}
-                    </div>
-                )}
-            </div>
+            )}
 
             <StreetView
                 apiKey={apiKey}
@@ -318,17 +356,12 @@ const GameContent = () => {
             />
 
             {gameState.isEnded ? (
-                <button
-                    className="absolute z-40 left-4 right-4 bottom-4 sm:left-auto sm:right-6 sm:bottom-6 rounded-xl w-auto sm:w-64 font-black text-sm uppercase tracking-wider py-4 px-6 transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]"
-                    style={{
-                        background: 'rgba(239,68,68,0.9)',
-                        color: '#fff',
-                        boxShadow: '0 8px 32px rgba(239,68,68,0.4), inset 0 2px 4px rgba(255,255,255,0.2)'
-                    }}
-                    onClick={leaveGame}
-                >
-                    Finish Game!
-                </button>
+                <GameEndScreen 
+                    teams={gameState.teams}
+                    game={game}
+                    scores={gameState.scores ?? {}}
+                    onClose={() => {}}
+                />
             ) : (
                 <div className={`absolute z-30 left-3 right-3 bottom-3 sm:left-auto sm:right-6 sm:bottom-6 p-1.5 rounded-2xl border border-white/10 bg-[#0c1524]/80 backdrop-blur-md shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ease-out 
                     ${isJoined 
@@ -356,10 +389,10 @@ const GameContent = () => {
                                         <GuessMarker position={g} />
                                     </div>
                                 ))}
-                                {gameState.roundData?.playerScore &&
+                                {gameState.roundData?.playerScore !== undefined &&
                                     <div className="absolute rounded-xl bg-[#080f1a]/95 border border-white/15 text-white p-5 bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 flex flex-col items-center w-[calc(100%-1.5rem)] max-w-[260px] sm:min-w-[220px] shadow-2xl backdrop-blur-md z-50 cursor-pointer transition-all duration-300 cubic-bezier(0.25, 0.8, 0.25, 1) hover:scale-[1.1] hover:origin-bottom hover:z-[999] hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                                         <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm uppercase tracking-wider mb-2">
-                                            <RiPinDistanceFill size={20} />
+                                            <MapPin size={18} />
                                             <span>Round Results</span>
                                         </div>
                                         <div className="flex flex-col gap-1.5 text-center w-full text-xs font-semibold">
