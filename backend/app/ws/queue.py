@@ -4,9 +4,8 @@ from flask_socketio import Namespace, emit, join_room, leave_room, close_room, s
 from flask_login import current_user
 from .util import authenticated_only
 from app import game_queue
-from apscheduler.jobstores.base import JobLookupError
 from app.core.scheduler import scheduler
-from .util import join_game_currently_in
+from .util import join_game_currently_in, safe_remove_job
 import datetime
 from app.config import settings
 from app.core.scheduler import send_queue_leave_event
@@ -14,12 +13,7 @@ from app.core.scheduler import send_queue_leave_event
 class QueueNamespace(Namespace):
     @authenticated_only
     def on_connect(self):
-        job_name = f'send_queue_leave_event:{current_user.id}'
-        if scheduler.get_job(job_name):
-            try:
-                scheduler.remove_job(job_name)
-            except JobLookupError as e:
-                current_app.logger.info(f'An error occured when trying to remove job {job_name}: {e}', exc_info=False)
+        safe_remove_job(f'send_queue_leave_event:{current_user.id}')
         join_game_currently_in()
     
     def on_disconnect(self, reason):

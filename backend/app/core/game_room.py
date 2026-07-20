@@ -91,11 +91,11 @@ class GameRoomRepository(RedisRepository):
     def get_game(self, game_key: str) -> dict:
         return self.redis.json().get(game_key)
 
-    def get_player(self, game_key: str, player_id: int) -> dict:
+    def get_player(self, game_key: str, player_id: int) -> dict | None:
         return self.redis.json().get(f'{game_key}:players:{player_id}')
     
     def set_player_key(self, game_key: str, player_id: int, key: str, value: Any) -> Any:
-        self.redis.json().set(f'{game_key}:players:{player_id}', f'{key}', value)
+        self.redis.json().set(f'{game_key}:players:{player_id}', f'$.{key}', value)
         self.update_game_expiry(game_key)
         return value
     

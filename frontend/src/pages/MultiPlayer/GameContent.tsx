@@ -29,7 +29,8 @@ interface GameState {
     teams: Team[];
     roundData: RoundData | null;
     defeatTeamName: string | null;
-    autosubmitSeconds: number;
+    currentCooldown: number;
+    cooldownMessage: string | null;
     guesses: MapLocation[];
 }
 interface NewRoundData {
@@ -68,7 +69,8 @@ const GameContent = () => {
         teams: [],
         roundData: null,
         defeatTeamName: null,
-        autosubmitSeconds: -1,
+        currentCooldown: -1,
+        cooldownMessage: null,
         guesses: [],
     });
 
@@ -117,6 +119,7 @@ const GameContent = () => {
 
         gameRoom.on('player_disconnected', (data) => {
             setIsPlayerConnected(data.id, false);
+            if (data.id === user?.id) navigate('/');
             toast.info(`Player ${data.username} has disconnected from the game!`);
         });
 
@@ -133,9 +136,15 @@ const GameContent = () => {
             }));
         }
 
-        const teamSubmittedCallback = (data: {seconds: number}) => {
-            setGameState((p) => ({...p, autosubmitSeconds: data.seconds}));
-        } 
+        const teamSubmittedCallback = (data: {current_cooldown: number, cooldown_message: string}) => {
+            setGameState((p) => ({...p, currentCooldown: data.current_cooldown, cooldownMessage: data.cooldown_message}));
+        };
+        const inactivityKickNotificationCallback = (data: {current_cooldown: number, cooldown_message: string}) => {
+            setGameState((p) => ({...p, currentCooldown: data.current_cooldown, cooldownMessage: data.cooldown_message}));
+        };
+        const inactivityKickCancelledCallback = () => {
+            setGameState((p) => ({...p, currentCooldown: -1, cooldownMessage: null}));
+        }
 
         const realTargetCallback = (data: {target: StreetViewLocationFromApi}) => {
             console.log(data.target, viewRef.current);
@@ -148,6 +157,8 @@ const GameContent = () => {
         gameRoom.on('record_defeat_started', recordDefeatStartedCallback);
         gameRoom.on('record_defeat_cancelled', recordDefeatCancelledCallback);
         gameRoom.on('team_submitted', teamSubmittedCallback);
+        gameRoom.on('inactivity_kick_notification', inactivityKickNotificationCallback);
+        gameRoom.on('inactivity_kick_cancelled', inactivityKickCancelledCallback);
         gameRoom.on('real_target', realTargetCallback);
 
         gameRoom.on('game_end', gameEndCallback);
@@ -161,6 +172,8 @@ const GameContent = () => {
             
             gameRoom.off('record_defeat_started', recordDefeatStartedCallback);
             gameRoom.off('record_defeat_cancelled', recordDefeatCancelledCallback);
+            gameRoom.off('inactivity_kick_notification', inactivityKickNotificationCallback);
+            gameRoom.off('inactivity_kick_cancelled', inactivityKickCancelledCallback);
             gameRoom.off('team_submitted', teamSubmittedCallback);
             gameRoom.off('new_round', newRoundCallback);
             gameRoom.off('game_end', gameEndCallback);
@@ -170,9 +183,12 @@ const GameContent = () => {
     }, [isJoined, gameKey, map]);
 
     useEffect(() => {
-        if (gameState.autosubmitSeconds <= 0) return;
+        if (gameState.currentCooldown <= 0) return;
         const interval = setInterval(() => {
-            setGameState((p) => ({...p, autosubmitSeconds: p.autosubmitSeconds - 1}));
+            setGameState((p) => ({
+                ...p, 
+                currentCooldown: p.currentCooldown - 1,
+            }));
         }, 1000);
         return () => {
             clearInterval(interval);
@@ -195,7 +211,8 @@ const GameContent = () => {
                 ...p, 
                 target: data.target, 
                 teams: data.teams, 
-                autosubmitSeconds: data.autosubmit_seconds,
+                currentCooldown: data.current_cooldown,
+                cooldownMessage: data.cooldown_message,
                 isSubmitted: !!data.guess,
             }))
             return data;
@@ -229,7 +246,8 @@ const GameContent = () => {
                     target: data.target, 
                     playerScore: data.scores[user.id]
                 },
-                autosubmitSeconds: -1,
+                currentCooldown: -1,
+                cooldownMessage: null,
             })
         );
         map.fitBounds(bounds);
@@ -268,9 +286,10 @@ const GameContent = () => {
                         <p>Round:</p>
                         <h2 className="text-2xl">{game?.round || 1}</h2>
                         <p>x{game?.multiplier || 1}</p>
-                        {gameState.autosubmitSeconds >= 0 && <div className="text-3xl">
-                        {gameState.autosubmitSeconds}
-                    </div>}
+                        {gameState.currentCooldown > 0 && <div>
+                            {gameState.cooldownMessage && <p className="text-sm">{gameState.cooldownMessage}</p>}
+                            <span className="text-3xl">{gameState.currentCooldown}</span>
+                        </div>}
                     </div>
                     
                 </div>

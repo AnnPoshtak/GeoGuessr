@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     leave_queue_event_interval: int 
     autosubmit_interval: int
     round_automove_cooldown: int
+    inactivity_kick_cooldown: int
+    inactivity_kick_notification_left: int
 
     @model_validator(mode='after')
     def _set_computed_fields(self):
