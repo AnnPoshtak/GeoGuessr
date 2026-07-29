@@ -1,9 +1,8 @@
 from app.core import validate_player_count
-from flask import current_app
 from flask_socketio import Namespace, emit, join_room, leave_room, close_room, send
 from flask_login import current_user
 from .util import authenticated_only
-from app import game_queue
+from app import game_queue, game_room
 from app.core.scheduler import scheduler
 from .util import join_game_currently_in, safe_remove_job
 import datetime
@@ -43,10 +42,14 @@ class QueueNamespace(Namespace):
     def on_join(self, data: dict = {}):
         if not data: 
             return
+        if not current_user.is_authenticated:
+            return
         if not 'player_count' in data:
             return send('Please select the queue you wish to join')
         if game_queue.is_player_in_queue(current_user.id):
             return send('You have already joined the queue')
+        if game_room.get_current_game(current_user.id):
+            return send("You can't join a queue when you are in active game")
         try:
             player_count = int(data['player_count'])
             validate_player_count(player_count)
