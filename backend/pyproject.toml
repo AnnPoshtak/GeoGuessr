@@ -1,0 +1,6 @@
+[tool.pytest]
+addopts = ["-v", '-p', "no:warnings"]
+testpaths = ["tests"]
+strict_markers = true
+python_files = ["tests.py", "test_*.py", "*_test.py"]
+markers = ["slow"]

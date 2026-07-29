@@ -1,33 +1,52 @@
-import { Route, Routes } from "react-router-dom";
-import SinglePlayer from "./pages/SinglePlayer/SinglePlayer.tsx";
-import OAuthCallback from "./pages/OAuthCallback/OAuthCallback.tsx";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import { GameContextProvider } from "./context/GameContext.tsx";
+
+import { MusicContextProvider, useMusic } from "./context/MusicContext.tsx";
+import { UserContextProvider } from './context/UserContext.tsx';
+import { useAudioPlayer } from "./hooks/useAudioPlayer.ts";
+import Router from "./routers/Router.tsx";
+
+export const BackgroundMusicPlayer = () => {
+    const { isPlaying, volume, setRoute } = useMusic();
+    const location = useLocation();
+
+    useEffect(() => {
+        setRoute(location.pathname);
+    }, [location.pathname, setRoute]);
+
+    useAudioPlayer(isPlaying, volume);
+
+    return null;
+}
 
 function App() {
     return (
-        <div className="w-full h-full">
-            <Toaster toastOptions={{
-                style: {
-                    // @ts-ignore
-                    // So toaster won't overlap with ui
-                    '--z-index': 1000,
-                    zIndex: 'calc(var(--z-index) - var(--index))',
-                }
-            }
-            }
-                duration={3000} position='bottom-right' richColors closeButton expand={true} />
-            <Routes>
-                <Route path="/" element={
-                    <GameContextProvider>
-                        <SinglePlayer />
-                    </GameContextProvider>
-                }></Route>
-                <Route path="/oauth/">
-                    <Route path="callback" element={<OAuthCallback />} />
-                </Route>
-            </Routes>
-        </div>
-    )
+        <MusicContextProvider>
+            <div className="w-full h-full">
+                <BackgroundMusicPlayer />
+
+                <Toaster
+                    toastOptions={{
+                        style: {
+                            // @ts-ignore
+                            '--z-index': 1000,
+                            zIndex: 'calc(var(--z-index) - var(--index))',
+                        }
+                    }}
+                    duration={3000}
+                    position='bottom-right'
+                    richColors
+                    closeButton
+                    expand
+                />
+
+                <UserContextProvider>
+                    <Router />
+                </UserContextProvider>
+            </div>
+        </MusicContextProvider>
+    );
 }
+
 export default App;

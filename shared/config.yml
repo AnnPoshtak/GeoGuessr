@@ -1,0 +1,16 @@
+score_calculation_scale: 300_000 # Distance after which score starts to drop drammatically, in metres
+min_players: 2
+gameroom_expiry_time: 7200 # 24 hours
+# TODO: sync this config option with frontend
+starting_player_health: 1000
+round_automove_cooldown: 5000 # milliseconds
+game_end_automove_cooldown: 10000 # milliseconds
+round_health_multiplier: 1.1 # The damage equals to score_diff * round * this multiplier
+game_playercount: [2, 4]
+game_teams: { 0: 'red', 1: 'blue' }
+defeat_team_interval: 5
+disconnect_event_interval: 3
+leave_queue_event_interval: 3
+autosubmit_interval: 5
+inactivity_kick_cooldown: 60 # The gamei initially schedules inactivity kick for this amount of seconds. The timer is reset when the user submits anything
+inactivity_kick_notification_left: 30 # When the user AFKs for inactivity_kick_cooldown - inactivity_kick_notification_left, the counter appears

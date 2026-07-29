@@ -1,35 +1,41 @@
-import { type MapLocation } from "@/types/MapLocation";
-import { GoogleMap, Polyline, useJsApiLoader } from "@react-google-maps/api";
-import { useEffect, useState } from "react";
-import GuessMarker from "../GuessMarker/GuessMarker";
-import TargetMarker from "../TargetMarker/TargetMarker";
-import { RiPinDistanceFill } from "react-icons/ri";
+import { type MapLocation } from "@/interfaces/MapLocation";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
+import { useState, type ReactNode } from "react";
 import { useGameContext } from "@/context/GameContext";
-import type { GuessSubmitApiResponse } from "@/types/GuessSubmitApiResponse";
-import type { UseMutationResult } from "@tanstack/react-query";
 
 interface LocationSelectMapProps {
     apiKey: string;
     className?: string;
     moveNext: () => void;
-    submitGuessMutation: UseMutationResult<GuessSubmitApiResponse, Error, MapLocation, unknown>,
-};
+    submitGuess: () => void;
+    isMoveNextBtnEnabled?: boolean;
+    isMultiplayer?: boolean;
+    children?: ReactNode;
+}
 
-function LocationSelectMap({ apiKey, className, moveNext, submitGuessMutation }: LocationSelectMapProps) {
+function LocationSelectMap({ 
+    apiKey, 
+    className, 
+    moveNext, 
+    submitGuess, 
+    isMoveNextBtnEnabled, 
+    isMultiplayer = false,
+    children 
+}: LocationSelectMapProps) {
+    
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey,
     });
+
     const mapOptions: google.maps.MapOptions = {
         disableDefaultUI: true,
         draggableCursor: 'crosshair',
         draggingCursor: 'crosshair',
     };
-    const { guessLocation, setGuessLocation,
-        guessSubmitResponse, setMap } = useGameContext();
-    const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
-    useEffect(() => setIsSubmitted(!!guessSubmitResponse?.guess), [guessSubmitResponse]);
+    const { isSubmitted, guessLocation, setGuessLocation, setMap } = useGameContext();
+    const [mapLocation] = useState<MapLocation>({ lat: 0, lng: 0 });
 
     const createMarker = (e: google.maps.MapMouseEvent) => {
         if (!e.latLng) return;
@@ -39,59 +45,47 @@ function LocationSelectMap({ apiKey, className, moveNext, submitGuessMutation }:
             lng: e.latLng.lng()
         });
     };
-    // Put it into useState bacause otherwise center would reset after click
-    const [mapLocation] = useState<MapLocation>({
-        lat: 0,
-        lng: 0,
-    });
 
-    const submitGuess = () => {
-        if (!guessLocation) return;
-        submitGuessMutation.mutate(guessLocation);
-        console.log('Guess submitted');
-    };
+    if (loadError) return <div className="text-neutral-400 p-4">Map loading error</div>;
+    if (!isLoaded) return <div className="text-neutral-400 p-4">Loading...</div>;
 
-    const lineSymbol = {
-        path: "M 0,-1 0,1",
-        strokeOpacity: 1,
-        scale: 3,
-    };
+    return (
+        <div className={`flex flex-col ${className}`}>
+            <div className="flex-1 w-full h-full relative">
+                <GoogleMap 
+                    onLoad={(m) => setMap(m)} 
+                    onClick={createMarker} 
+                    mapContainerClassName="w-full h-full border-0 rounded-2xl" 
+                    options={mapOptions} 
+                    center={mapLocation} 
+                    zoom={1.5}
+                >
+                    {children}
+                </GoogleMap>
+            </div>
 
-    if (loadError) return <div>Map loading error</div>;
-    if (!isLoaded) return <div>Loading...</div>;
-    return <div className={className}>
-        <GoogleMap onLoad={(m) => setMap(m)} onClick={createMarker} mapContainerClassName="w-full h-full border-0 rounded-2xl" options={mapOptions} center={mapLocation} zoom={1.5}>
-            {guessSubmitResponse?.target && guessLocation && < TargetMarker position={guessSubmitResponse?.target} />}
-            <Polyline path={
-                guessLocation && guessSubmitResponse?.target ? [
-                    guessLocation,
-                    guessSubmitResponse?.target
-                ] : []} options={
-                    {
-                        visible: isSubmitted && !!guessSubmitResponse?.target && !!guessLocation,
-                        strokeOpacity: 0,
-                        icons: [
-                            {
-                                icon: lineSymbol,
-                                offset: '0',
-                                repeat: '15px'
-                            }
-                        ]
-                    }
-                } />
-            {guessSubmitResponse && <div className="absolute rounded bg-neutral-800/70 text-neutral-50 p-2 bottom-2 left-1/2 -translate-x-1/2">
-                <div className="flex items-center gap-1"><RiPinDistanceFill size={24} /><span>{Math.floor(guessSubmitResponse.distance / 1000)}km</span></div>
-                <div>{guessSubmitResponse.score} points</div>
-            </div>}
-            {guessLocation && <GuessMarker position={guessLocation} />}
-        </GoogleMap>
-        {isSubmitted ?
-            <button className="w-full rounded bg-red-500 hover:bg-red-600 cursor-pointer p-2 text-neutral-50"
-                onClick={moveNext}>Next!</button> :
-            <button className="w-full rounded disabled:hover:bg-gray-500 disabled:bg-gray-500 disabled:cursor-not-allowed
-         bg-red-500 hover:bg-red-600 cursor-pointer p-2 text-neutral-50"
-                disabled={!guessLocation} onClick={submitGuess}>Submit guess!</button>}
-    </div>;
+            {!isMultiplayer && (
+                <>
+                    {isSubmitted && isMoveNextBtnEnabled ? (
+                        <button 
+                            className="mt-3 w-full rounded-xl bg-neutral-100 hover:bg-white text-neutral-950 font-semibold p-3 cursor-pointer transition-colors duration-200"
+                            onClick={moveNext}
+                        >
+                            Next!
+                        </button>
+                    ) : (
+                        <button 
+                            className="mt-3 w-full rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-medium p-3 transition-colors duration-200 cursor-pointer disabled:bg-neutral-900 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                            disabled={isSubmitted || !guessLocation}
+                            onClick={submitGuess}
+                        >
+                            Submit guess!
+                        </button>
+                    )}
+                </>
+            )}
+        </div>
+    );
 }
 
 export default LocationSelectMap;

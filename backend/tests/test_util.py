@@ -1,5 +1,5 @@
 import pytest
-from app.util import *
+from app.core.util import *
 
 def test_calculate_line_distance():
     loc1 = {

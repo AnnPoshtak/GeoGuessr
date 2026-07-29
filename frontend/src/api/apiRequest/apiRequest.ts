@@ -1,9 +1,8 @@
-import config from "@/config";
+import client from '../client';
 
-async function apiRequest<T>(url: RequestInfo | URL, init?: RequestInit) {
-    const resp = await fetch(config.backendUrl + url, init);
-    if (!resp.ok) throw new Error(`An error occured while trying to complete an request: ${resp.statusText}`);
-    return await resp.json() as T;
+async function apiRequest<T>(url: string | URL | Request, _init?: RequestInit) {
+    const response = await client.get<T>(String(url));
+    return response.data;
 }
 
 export default apiRequest;

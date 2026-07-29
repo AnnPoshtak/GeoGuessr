@@ -27,14 +27,21 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*"
-      ]
+        "./src/*",
+      ],
+      "#root/*": ["../*"]
     }
   },
   "include": [
-    "src"
+    "src",
+    "src/ws"
   ],
+  "exclude": [
+    "src/tests",
+    "src/**/*.test.*"
+  ]
 }

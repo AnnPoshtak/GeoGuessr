@@ -1,4 +1,4 @@
-from app import db
+from app.extensions import db
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import func, ForeignKey
 import datetime
@@ -8,7 +8,7 @@ class BaseModel(db.Model):
     __abstract__ = True
     id: Mapped[int] = mapped_column(primary_key=True)
     created_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now())
-    created_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now(), onupdate=func.now())
 
 class UserModel(BaseModel, UserMixin):
     __tablename__ = 'users'

@@ -1,23 +1,8 @@
-import type { MapLocation } from "@/types/MapLocation";
-import apiRequest from "../apiRequest/apiRequest";
-import type { GuessSubmitApiResponse } from "@/types/GuessSubmitApiResponse";
+import type { MapLocation } from "@/interfaces/MapLocation";
+import { gameApi } from "../index";
 
 async function submitGuess(location: MapLocation) {
-    const body = {
-        guess: {
-            lat: location.lat,
-            lng: location.lng,
-        }
-    };
-    const data = await apiRequest<GuessSubmitApiResponse>('/game/submit_location/', {
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify(body),
-    });
-    return data;
+    return gameApi.submitGuess(location);
 }
 
 export default submitGuess;

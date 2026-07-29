@@ -1,4 +1,4 @@
-import type { MapLocation } from "@/types/MapLocation";
+import type { MapLocation } from "@/interfaces/MapLocation";
 import { Marker } from "@react-google-maps/api";
 import TargetIcon from '@/public/icons/target-marker.svg';
 

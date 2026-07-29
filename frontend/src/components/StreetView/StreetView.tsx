@@ -1,15 +1,13 @@
-import type { MapLocation } from '@/types/MapLocation';
 import { GoogleMap, useJsApiLoader, StreetViewPanorama, type StreetViewPanoramaProps } from '@react-google-maps/api';
 
 interface StreetViewProps {
     apiKey: string;
     zoom: number;
-    center: MapLocation;
     className?: string;
     panoramaProps: StreetViewPanoramaProps;
 }
 
-function StreetView({ apiKey, zoom, center, className, panoramaProps }: StreetViewProps) {
+function StreetView({ apiKey, zoom, className, panoramaProps }: StreetViewProps) {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey,
@@ -26,8 +24,6 @@ function StreetView({ apiKey, zoom, center, className, panoramaProps }: StreetVi
     const streetViewProps: StreetViewPanoramaProps = {
         ...panoramaProps,
         // @ts-ignore
-        position: center,
-        // @ts-ignore
         visible: true,
         options: streetViewOptions
     }
@@ -35,7 +31,7 @@ function StreetView({ apiKey, zoom, center, className, panoramaProps }: StreetVi
     return (
         <GoogleMap
             mapContainerClassName={className}
-            center={center}
+            heading={streetViewProps.options?.pov?.heading}
             zoom={zoom}
         >
             <StreetViewPanorama

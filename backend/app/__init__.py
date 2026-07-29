@@ -1,22 +1,17 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from flask_migrate import Migrate
-from flask_login import LoginManager
-from flask_marshmallow import Marshmallow
-from app.config import DevelopmentConfig
-from authlib.integrations.flask_client import OAuth
-from flask_session import Session
+from app.config import DevelopmentConfig, settings, configure_settings
+from app.extensions import cors, db, migrate, login_manager, ma, oauth, server_session, socketio, scheduler
+import os
+from redis import Redis
+from app.core import GameQueueRepository, GameRoomRepository
 
-cors = CORS()
-db = SQLAlchemy()
-migrate = Migrate()
-login_manager = LoginManager()
-ma = Marshmallow()
-oauth = OAuth()
-sess = Session()
+session_redis = Redis.from_url(os.environ['REDIS_URL'])
+app_redis = Redis.from_url(os.environ['REDIS_URL'], decode_responses=True) 
+game_queue = GameQueueRepository(app_redis)
+game_room = GameRoomRepository(app_redis)
 
 from .models import UserModel
+from . import ws
 
 @login_manager.user_loader
 def load_user(id):
@@ -24,17 +19,32 @@ def load_user(id):
 
 def create_app(config=DevelopmentConfig) -> Flask:
     app = Flask(__name__)
-    app.config.from_object(config())
+    configure_settings(config)
+    app.config.from_mapping(settings.model_dump())
+    app.config.update({
+        'SESSION_REDIS': session_redis
+    })
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
+    cors.init_app(app, origins=settings.CORS_ORIGINS, supports_credentials=True)
     ma.init_app(app)
     login_manager.init_app(app)
     oauth.init_app(app)
-    sess.init_app(app)
+    server_session.init_app(app)
+    socketio.init_app(app, cors_allowed_origins=settings.CORS_ORIGINS,
+                      logger=True, async_mode=os.environ.get('SOCKETIO_ASYNC_MODE', 'threading'),
+                      manage_session=False)
 
-    for p_name, p_data in app.config['OAUTH_PROVIDERS'].items():
+    from redis import ConnectionPool
+    from apscheduler.jobstores.redis import RedisJobStore
+    pool = ConnectionPool.from_url(os.environ['REDIS_URL'])
+    app.config['SCHEDULER_JOBSTORES'] = {
+        'default': RedisJobStore(jobs_key='scheduler_jobs', run_times_key='scheduler_run_times', connection_pool=pool)
+    }
+    scheduler.init_app(app)
+
+    for p_name, p_data in settings.OAUTH_PROVIDERS.items():
         oauth.register(
             p_name,
             client_id=p_data['client_id'],
@@ -50,12 +60,11 @@ def create_app(config=DevelopmentConfig) -> Flask:
         )
 
     with app.app_context():
-        db.create_all()
         from .blueprints import oauth_bp, users_bp, auth_bp, game_bp
+        scheduler.start()
         app.register_blueprint(oauth_bp, url_prefix='/oauth')
         app.register_blueprint(users_bp, url_prefix='/users')
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(game_bp, url_prefix='/game')
-
 
     return app

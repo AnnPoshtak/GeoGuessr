@@ -1,32 +1,32 @@
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-from redis import Redis
+from pydantic import model_validator, Field
+from pydantic_settings import BaseSettings, YamlConfigSettingsSource, SettingsConfigDict, EnvSettingsSource
 
 PROJECT_PATH = Path(__file__).resolve().parents[2]
-ENV_PATH = Path(PROJECT_PATH) / "backend" / ".env"
+ENV_PATH = str(PROJECT_PATH / "backend" / ".env")
+YAML_CONFIG_PATH = str(PROJECT_PATH / "shared" / "config.yml")
 
 load_dotenv(ENV_PATH)
 
-class BaseConfig():
-    SECRET_KEY = os.environ['SECRET_KEY']
-    SESSION_COOKIE_HTTPONLY=True
-    SESSION_COOKIE_SAMESITE='Strict'
-    @property
-    def SQLALCHEMY_DATABASE_URI(self) -> str:
-        user = os.environ['DB_USER']
-        password = os.environ['DB_PASSWORD']
-        host = os.environ['DB_HOST']
-        port = os.environ['DB_PORT']
-        dbname = os.environ['DB_NAME']
-        return (
-            f'postgresql+psycopg2://{user}:{password}'
-            f'@{host}:{port}/{dbname}'
-        )
-    CORS_ORIGINS = {
-        '/*': os.environ['CORS_ORIGINS']
-    }
-    OAUTH_PROVIDERS = {
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_PATH,
+        yaml_file=YAML_CONFIG_PATH,
+        extra='ignore',
+        env_ignore_empty=True
+    )
+    SECRET_KEY: str
+    SQLALCHEMY_DATABASE_URI: str
+    FRONTEND_URL: str
+    REDIS_URL: str
+
+    SESSION_COOKIE_HTTPONLY: bool = True
+    SESSION_COOKIE_SAMESITE: str = 'Lax'
+    CORS_ORIGINS: list[str] = Field(default=[], validation_alias='CORS_ORIGINS_CONFIG')
+    OAUTH_PROVIDERS: dict = {
         'google': {
             'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
             'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
@@ -35,27 +35,76 @@ class BaseConfig():
             'api_base_url': 'https:/googleapis.com/',
             'userinfo': {
                 'url': 'https://www.googleapis.com/oauth2/v3/userinfo',
-                # This field exists because different oauth providers give different emails, i.e. github 
-                # provides you with a list of emals attached to an account
                 'email': lambda json: json['email'],
             },
             'scopes': ['email']
         },
     }
-    FRONTEND_URL = os.environ['FRONTEND_URL'].rstrip('/')
-    # An url for frontend oauth callback
-    FRONTEND_OAUTH_CALLBACK_URL = f"{FRONTEND_URL}/oauth/callback/"
-    # Flask session-related settings
-    SESSION_TYPE = 'redis'
-    SESSION_REDIS = Redis(host=os.environ['REDIS_HOST'],
-                          port=int(os.environ['REDIS_PORT']))
-    # Game config
-    SCORE_CALCULATION_SCALE = 300_000 # Distance after which score starts to drop drammatically, in metres
+    FRONTEND_OAUTH_CALLBACK_URL: str = ""
+    SESSION_TYPE: str = 'redis'
+    SCHEDULER_TIMEZONE: str = 'UTC'
+    SCHEDULER_JOB_DEFAULTS: dict = {
+        'misfire_grace_time': 5,
+        'coalesce': True,
+        'max_instances': 1,
+    }
+    
+    score_calculation_scale: int
+    min_players: int
+    gameroom_expiry_time: int
+    starting_player_health: int
+    round_health_multiplier: float
+    game_playercount: list
+    game_teams: dict
+    defeat_team_interval: int
+    disconnect_event_interval: int
+    leave_queue_event_interval: int 
+    autosubmit_interval: int
+    round_automove_cooldown: int
+    inactivity_kick_cooldown: int
+    inactivity_kick_notification_left: int
 
-class DevelopmentConfig(BaseConfig):
-    DEBUG = True
-    FLASK_ENV = 'DEVELOPMENT'
+    @model_validator(mode='after')
+    def _set_computed_fields(self):
+        self.FRONTEND_OAUTH_CALLBACK_URL = f"{self.FRONTEND_URL}/oauth/callback/"
+        if not self.CORS_ORIGINS:
+            self.CORS_ORIGINS = [os.environ.get('CORS_ORIGINS', 'http://localhost:5173').strip("'\"")]
+        self.round_automove_cooldown = int(self.round_automove_cooldown / 1000)
+        return self
 
-class TestingConfig(BaseConfig):
-    TESTING = True
-    FLASK_ENV = 'TESTING'
+    @classmethod
+    def settings_customise_sources(cls, settings_cls, **kwargs):
+        return (
+            EnvSettingsSource(settings_cls),
+            YamlConfigSettingsSource(settings_cls),
+        )
+
+
+class DevelopmentConfig(Settings):
+    DEBUG: bool = True
+    FLASK_ENV: str = 'DEVELOPMENT'
+
+
+class TestingConfig(Settings):
+    TESTING: bool = True
+    FLASK_ENV: str = 'TESTING'
+    SQLALCHEMY_DATABASE_URI: str = 'sqlite://'
+
+
+_settings: Settings | None = None
+
+
+class _SettingsProxy:
+    def __getattr__(self, name):
+        if _settings is None:
+            raise RuntimeError("Settings not configured. Call configure_settings() first.")
+        return getattr(_settings, name)
+
+
+settings: Settings = _SettingsProxy()
+
+
+def configure_settings(config_class=DevelopmentConfig) -> Settings:
+    global _settings
+    _settings = config_class()
+    return _settings
