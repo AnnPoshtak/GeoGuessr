@@ -1,11 +1,10 @@
-from app import socketio
-from flask import current_app
-from .game import GameNamespace
-from .queue import QueueNamespace
+import socketio
+from app.config import settings, logger
 
-socketio.on_namespace(QueueNamespace('/queue'))
-socketio.on_namespace(GameNamespace('/game'))
+sio = socketio.AsyncServer(cors_allowed_origins=settings.CORS_ORIGINS, async_mode="asgi", logger=settings.DEBUG)
 
-@socketio.on_error_default
-def handle_error(e: Exception):
-    current_app.logger.error(f'A SocketIO error occured: {e}', exc_info=True)
+# from .game import GameNamespace
+# from .queue import QueueNamespace
+
+# sio.register_namespace(QueueNamespace('/queue'))
+# sio.register_namespace(GameNamespace('/game'))

@@ -18,7 +18,7 @@ COPY backend ./backend
 
 WORKDIR /app/backend
 
-EXPOSE 5000
+EXPOSE 8000
 
 CMD ["alemic", "upgrade", "head"]
 

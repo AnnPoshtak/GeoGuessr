@@ -1,15 +1,12 @@
 import os
-from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import model_validator, Field
-from pydantic_settings import BaseSettings, YamlConfigSettingsSource, SettingsConfigDict, EnvSettingsSource
+from pydantic_settings import BaseSettings, YamlConfigSettingsSource, SettingsConfigDict
+import logging
 
 PROJECT_PATH = Path(__file__).resolve().parents[2]
 ENV_PATH = str(PROJECT_PATH / "backend" / ".env")
 YAML_CONFIG_PATH = str(PROJECT_PATH / "shared" / "config.yml")
-
-load_dotenv(ENV_PATH)
-
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -18,11 +15,16 @@ class Settings(BaseSettings):
         extra='ignore',
         env_ignore_empty=True
     )
+    # .env
     SECRET_KEY: str
     SQLALCHEMY_DATABASE_URI: str
     FRONTEND_URL: str
     REDIS_URL: str
+    HOST: str
+    PORT: int
+    DEBUG: bool
 
+    # python-defined settings
     SESSION_COOKIE_HTTPONLY: bool = True
     SESSION_COOKIE_SAMESITE: str = 'Lax'
     CORS_ORIGINS: list[str] = Field(default=[], validation_alias='CORS_ORIGINS_CONFIG')
@@ -48,7 +50,8 @@ class Settings(BaseSettings):
         'coalesce': True,
         'max_instances': 1,
     }
-    
+
+    # config.yml
     score_calculation_scale: int
     min_players: int
     gameroom_expiry_time: int
@@ -73,38 +76,15 @@ class Settings(BaseSettings):
         return self
 
     @classmethod
-    def settings_customise_sources(cls, settings_cls, **kwargs):
+    def settings_customise_sources(cls, settings_cls, env_settings, dotenv_settings, **kwargs):
         return (
-            EnvSettingsSource(settings_cls),
+            env_settings,
+            dotenv_settings,
             YamlConfigSettingsSource(settings_cls),
         )
 
 
-class DevelopmentConfig(Settings):
-    DEBUG: bool = True
-    FLASK_ENV: str = 'DEVELOPMENT'
+settings = Settings()
 
-
-class TestingConfig(Settings):
-    TESTING: bool = True
-    FLASK_ENV: str = 'TESTING'
-    SQLALCHEMY_DATABASE_URI: str = 'sqlite://'
-
-
-_settings: Settings | None = None
-
-
-class _SettingsProxy:
-    def __getattr__(self, name):
-        if _settings is None:
-            raise RuntimeError("Settings not configured. Call configure_settings() first.")
-        return getattr(_settings, name)
-
-
-settings: Settings = _SettingsProxy()
-
-
-def configure_settings(config_class=DevelopmentConfig) -> Settings:
-    global _settings
-    _settings = config_class()
-    return _settings
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)

@@ -5,8 +5,8 @@ export const logout = async () => {
 };
 
 export const getOAuthUrl = (provider: string) => {
-  const backendUrl = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000')
-    .trim()
-    .replace('./', '');
+  const backendUrl = (
+    import.meta.env.VITE_BACKEND_URL
+  ).trim().replace('./', '');
   return `${backendUrl}/oauth/authorize/${provider}/`;
 };

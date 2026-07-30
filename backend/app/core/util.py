@@ -2,21 +2,24 @@ import random
 from app.locations import EUROPE_LOCATIONS
 from app.config import settings
 import math
+from app.schemas import MapLocation, StreetViewLocation
 
-def get_random_location() -> dict:
-    return random.choice(EUROPE_LOCATIONS)
+def get_random_location() -> StreetViewLocation:
+    return StreetViewLocation.model_validate(random.choice(EUROPE_LOCATIONS))
 
 def validate_player_count(player_count: int) -> None:
     if not player_count in settings.game_playercount:
         raise ValueError(f'Wrong player count. Valid ones are: {settings.game_playercount}')
 
-def calculate_line_distance(loc1: dict, loc2: dict) -> float:
+def calculate_line_distance(loc1: MapLocation, loc2: MapLocation) -> float:
+    loc1 = MapLocation.model_validate(loc1)
+    loc2 = MapLocation.model_validate(loc2)
     EARTH_RAD = 6371 * 1000
-    lat1 = math.radians(loc1['lat'])
-    lng1 = math.radians(loc1['lng'])
+    lat1 = math.radians(loc1.lat)
+    lng1 = math.radians(loc1.lng)
 
-    lat2 = math.radians(loc2['lat'])
-    lng2 = math.radians(loc2['lng'])
+    lat2 = math.radians(loc2.lat)
+    lng2 = math.radians(loc2.lng)
 
     d_lat = lat2 - lat1
     d_lng = lng2 - lng1

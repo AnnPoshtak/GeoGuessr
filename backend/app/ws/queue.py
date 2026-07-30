@@ -1,8 +1,7 @@
-from app.core import validate_player_count
+from app.core import validate_player_count, game_queue, game_room
 from flask_socketio import Namespace, emit, join_room, leave_room, close_room, send
 from flask_login import current_user
 from .util import authenticated_only
-from app import game_queue, game_room
 from app.core.scheduler import scheduler
 from .util import join_game_currently_in, safe_remove_job
 import datetime

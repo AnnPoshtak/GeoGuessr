@@ -8,26 +8,26 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U geoguessr -d geoguessr"]
+      test: ['CMD-SHELL', 'pg_isready -U geoguessr -d geoguessr']
       interval: 5s
       timeout: 5s
       retries: 10
     ports:
-      - "5432:5432"
+      - '5432:5432'
     networks:
       - geoguessr-network
 
   redis:
     image: redis/redis-stack-server:latest
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - geoguessr-network
 
   backend:
     build:
-      context: .                          
-      dockerfile: backend/Dockerfile      
+      context: .
+      dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -36,10 +36,10 @@ services:
     environment:
       SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://geoguessr:geoguessr@db:5432/geoguessr
       DATABASE_URL: postgresql+psycopg2://geoguessr:geoguessr@db:5432/geoguessr
-      REDIS_URL: redis://redis:6379/0    
-      FLASK_DEBUG: "True"
+      REDIS_URL: redis://redis:6379/0
+      FLASK_DEBUG: 'True'
     ports:
-      - "8000:5000"                      
+      - '8000:8000'
     networks:
       - geoguessr-network
     volumes:
@@ -47,20 +47,20 @@ services:
 
   frontend:
     build:
-      context: .                          
-      dockerfile: frontend/Dockerfile     
+      context: .
+      dockerfile: frontend/Dockerfile
     depends_on:
       - backend
     env_file:
       - ./frontend/.env
     environment:
-      VITE_BACKEND_URL: "http://localhost:8000"         
-      VITE_SOCKETIO_SERVER_URL: "http://localhost:8000" 
+      VITE_BACKEND_URL: 'http://localhost:8000'
+      VITE_SOCKETIO_SERVER_URL: 'http://localhost:8000'
     ports:
-      - "5173:5173"
+      - '5173:5173'
     volumes:
       - ./frontend:/app/frontend
-      - ./shared:/app/shared 
+      - ./shared:/app/shared
     networks:
       - geoguessr-network
 

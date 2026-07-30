@@ -14,7 +14,7 @@ from app.config import TestingConfig
 @pytest.fixture(scope='session')
 def app():
     app = create_app(TestingConfig)
-    app.config['SERVER_NAME'] = 'localhost:5000'
+    app.config['SERVER_NAME'] = 'localhost:8000'
 
     yield app
 

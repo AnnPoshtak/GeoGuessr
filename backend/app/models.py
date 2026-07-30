@@ -1,16 +1,14 @@
-from app.extensions import db
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from sqlalchemy import func, ForeignKey
 import datetime
-from flask_login import UserMixin
 
-class BaseModel(db.Model):
+class BaseModel(DeclarativeBase):
     __abstract__ = True
     id: Mapped[int] = mapped_column(primary_key=True)
     created_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(default=func.now(), server_default=func.now(), onupdate=func.now())
 
-class UserModel(BaseModel, UserMixin):
+class UserModel(BaseModel):
     __tablename__ = 'users'
     username: Mapped[str]
     stats: Mapped['UserStatsModel'] = relationship(back_populates='user')
