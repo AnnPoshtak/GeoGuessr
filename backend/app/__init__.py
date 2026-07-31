@@ -5,6 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from contextlib import asynccontextmanager
 import socketio
 import app.routes.single_player as single_player
+import app.routes.users as users
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,6 +30,7 @@ app.add_middleware(
 app.state.user_websocket_sessions = {}
 
 app.include_router(single_player.router, prefix='/single-player')
+app.include_router(users.router, prefix='/users')
 
 from .ws import sio
 

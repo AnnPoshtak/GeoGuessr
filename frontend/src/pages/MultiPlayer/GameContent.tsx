@@ -37,7 +37,7 @@ interface GameState {
 interface NewRoundData {
     target: MapLocation;
     teams: Team[];
-    scores: Record<number, number>;
+    scores: Record<string, number>;
 }
 interface RoundData {
     target: MapLocation;
@@ -51,11 +51,11 @@ const GameContent = () => {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { gameKey, isJoined } = useMultiplayerContext();
 
-    const setIsPlayerConnected = (playerId: number, value: boolean) => {
+    const setIsPlayerConnected = (playerId: string, value: boolean) => {
         setGameState(prev => ({...prev, teams: prev.teams.map(t =>
         ({
             ...t,
-            players: t.players.map((p) => p.id === playerId ? {
+            players: t.players.map((p) => p.firebase_uid === playerId ? {
                 ...p,
                 is_connected: value,
             } : p)
@@ -112,7 +112,7 @@ const GameContent = () => {
 
         gameRoom.on('player_disconnected', (data) => {
             setIsPlayerConnected(data.id, false);
-            if (data.id === user?.id) navigate('/');
+            if (data.id === user?.firebase_uid) navigate('/');
             toast.info(`Player ${data.username} has disconnected from the game!`);
         });
 
@@ -234,7 +234,7 @@ const GameContent = () => {
                 scores: data.scores,
                 roundData: {
                     target: data.target, 
-                    playerScore: data.scores[user.id] ?? 0
+                    playerScore: data.scores[user.firebase_uid] ?? 0
                 },
                 currentCooldown: -1,
                 cooldownMessage: null,

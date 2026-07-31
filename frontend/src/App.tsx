@@ -6,6 +6,8 @@ import { MusicContextProvider, useMusic } from "./context/MusicContext.tsx";
 import { UserContextProvider } from './context/UserContext.tsx';
 import { useAudioPlayer } from "./hooks/useAudioPlayer.ts";
 import Router from "./routers/Router.tsx";
+import { ui } from "./firebase.ts";
+import {FirebaseUIProvider} from '@firebase-oss/ui-react';
 
 export const BackgroundMusicPlayer = () => {
     const { isPlaying, volume, setRoute } = useMusic();
@@ -40,10 +42,11 @@ function App() {
                     closeButton
                     expand
                 />
-
-                <UserContextProvider>
-                    <Router />
-                </UserContextProvider>
+                <FirebaseUIProvider ui={ui}>
+                    <UserContextProvider>
+                        <Router />
+                    </UserContextProvider>
+                </FirebaseUIProvider>
             </div>
         </MusicContextProvider>
     );

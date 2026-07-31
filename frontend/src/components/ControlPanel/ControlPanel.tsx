@@ -1,19 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { User, ChevronDown, LogOut, LogIn } from 'lucide-react';
 import { useUser } from '@/context/UserContext.tsx';
 import VolumeControl from '../VolumeControl/VolumeControl';
+import { useNavigate } from 'react-router-dom';
 
 export const Dropdown = () => {
-  const { user, login, logout, refreshUser } = useUser();
+  const { user, logout } = useUser();
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) refreshUser();
-  }, [isOpen, refreshUser]);
+  const navigate = useNavigate();
 
   const toggleDropdown = () => setIsOpen((prev: boolean) => !prev);
 
-  const handleLogin = () => login();
+  const handleLogin = () => navigate('/auth/login');
 
   const handleLogout = async () => {
     await logout();

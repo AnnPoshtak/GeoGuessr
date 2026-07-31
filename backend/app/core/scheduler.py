@@ -1,7 +1,7 @@
 import datetime
 from app.ws import sio
 from app.config import settings
-from app.core.db import SessionLocal
+from app.db import SessionLocal
 from app.models import UserModel
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.redis import RedisJobStore

@@ -21,7 +21,6 @@ def submit_location(request: Request, location: MapLocation) -> SubmitLocationRe
     if not request.session.get('location'):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No map location was generated!')
     target = request.session.pop('location')
-    print(target, type(target))
     distance = calculate_line_distance(target, data)
     score = calculate_score(distance)
     result = {

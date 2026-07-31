@@ -50,6 +50,7 @@ class Settings(BaseSettings):
         'coalesce': True,
         'max_instances': 1,
     }
+    FIREBASE_CERT_PATH: str = str(Path(PROJECT_PATH, "backend", "serviceAccountKey.json"))
 
     # config.yml
     score_calculation_scale: int

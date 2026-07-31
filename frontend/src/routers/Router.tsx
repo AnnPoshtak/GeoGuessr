@@ -6,8 +6,8 @@ import { MultiplayerContextProvider } from "@/context/MultiplayerContext.tsx";
 import Home from "@/pages/Home/Home.tsx";
 import MultiplayerGame from "@/pages/MultiPlayer/MultiPlayer.tsx";
 import MultiplayerMenu from "@/pages/MultiPlayer/MultiplayerMenu.tsx";
-import OAuthCallback from "@/pages/OAuthCallback/OAuthCallback.tsx";
 import SinglePlayer from "@/pages/SinglePlayer/SinglePlayer.tsx";
+import Login from "@/pages/Auth/Login";
 
 function Router() {
     return (
@@ -21,6 +21,9 @@ function Router() {
             } />
 
             <Route path="/multiplayer" element={<MultiplayerMenu />} />
+            <Route path="/auth/">
+                <Route path="login" element={<Login />} />
+            </Route>
 
             <Route path="/multiplayer-game" element={
                 <GameContextProvider>
@@ -30,7 +33,6 @@ function Router() {
                 </GameContextProvider>
             } />
 
-            <Route path="/oauth/callback" element={<OAuthCallback />} />
         </Routes>
     );
 }
