@@ -17,7 +17,7 @@ export default function MultiplayerMenu() {
     const navigate = useNavigate();
     const { setIsJoined } = useMultiplayerContext();
 
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
 
     const { data: queue } = useQuery<GameQueue | null>({
@@ -37,11 +37,12 @@ export default function MultiplayerMenu() {
     }, [queue]);
 
     useEffect(() => {
-        if (user === null) {
+        if (isUserLoading) return;
+        if (!user) {
             navigate('/');
             toast.info('To play in multiplayer mode, you need to log in to your account');
         }
-    }, [user, navigate]);
+    }, [user, navigate, isUserLoading]);
 
     const handleSelectMode = (mode: '1v1' | '2v2') => {
         setSelectedMode(mode);

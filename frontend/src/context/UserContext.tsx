@@ -7,25 +7,26 @@ import { type User as FirebaseUser } from 'firebase/auth';
 
 interface UserContextProps {
   user: User | null;
+  isUserLoading: boolean;
   firebaseUser: FirebaseUser | null;
-  setUser: (u: User | null) => void;
   logout: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextProps>({
   user: null,
+  isUserLoading: false,
   firebaseUser: null,
-  setUser: () => { },
   logout: async () => { },
 });
 
 export const UserContextProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(auth.currentUser);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
     const unregisterAuthObserver = auth.onAuthStateChanged((user: FirebaseUser | null) => {
       setFirebaseUser(user);
+      setAuthInitialized(true);
     });
 
     return () => {
@@ -33,26 +34,25 @@ export const UserContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  useQuery<User | null>({
+  const {data: user, isFetching} = useQuery<User | null>({
     queryKey: ["user", firebaseUser?.uid],
     queryFn: async () => {
-      if (!firebaseUser) {
-        setUser(null);
-        return null;
-      };
+      if (!firebaseUser) return null;
       const token = await firebaseUser.getIdToken();
       const data = await usersApi.getCurrentUser(token);
-      setUser(data);
       return data;
     },
+    initialData: null,
   });
 
   const logout = async () => {
     await auth.signOut();
   };
 
+  const isUserLoading = !authInitialized || (!!firebaseUser && isFetching);
+
   return (
-    <UserContext.Provider value={{ user, firebaseUser, setUser, logout }}>
+    <UserContext.Provider value={{ user, isUserLoading, firebaseUser, logout }}>
       {children}
     </UserContext.Provider>
   );
