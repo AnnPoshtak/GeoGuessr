@@ -46,16 +46,25 @@ function LocationSelectMap({
         });
     };
 
-    if (loadError) return <div className="text-neutral-400 p-4">Map loading error</div>;
-    if (!isLoaded) return <div className="text-neutral-400 p-4">Loading...</div>;
+    if (loadError) return (
+        <div className="flex items-center justify-center p-4 text-xs font-bold uppercase tracking-wider text-rose-500 bg-glass-bg backdrop-blur-md rounded-2xl border border-glass-border">
+            Map loading error
+        </div>
+    );
+    
+    if (!isLoaded) return (
+        <div className="flex items-center justify-center p-4 text-xs font-bold uppercase tracking-wider text-muted bg-glass-bg backdrop-blur-md rounded-2xl border border-glass-border animate-pulse">
+            Loading map...
+        </div>
+    );
 
     return (
-        <div className={`flex flex-col ${className}`}>
-            <div className="flex-1 w-full h-full relative">
+        <div className={`flex flex-col bg-glass-bg backdrop-blur-md border border-glass-border rounded-2xl p-2 shadow-2xl transition-all duration-300 ${className}`}>
+            <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-black/5 dark:border-white/10">
                 <GoogleMap 
                     onLoad={(m) => setMap(m)} 
                     onClick={createMarker} 
-                    mapContainerClassName="w-full h-full border-0 rounded-2xl" 
+                    mapContainerClassName="w-full h-full border-0 rounded-xl" 
                     options={mapOptions} 
                     center={mapLocation} 
                     zoom={1.5}
@@ -63,26 +72,26 @@ function LocationSelectMap({
                     {children}
                 </GoogleMap>
             </div>
-
+            
             {!isMultiplayer && (
-                <>
+                <div className="mt-2 w-full shrink-0">
                     {isSubmitted && isMoveNextBtnEnabled ? (
                         <button 
-                            className="mt-3 w-full rounded-xl bg-neutral-100 hover:bg-white text-neutral-950 font-semibold p-3 cursor-pointer transition-colors duration-200"
+                            className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider py-3 px-4 shadow-lg shadow-emerald-900/20 active:scale-[0.98] transition-all duration-200 cursor-pointer"
                             onClick={moveNext}
                         >
-                            Next!
+                            Next Round!
                         </button>
                     ) : (
                         <button 
-                            className="mt-3 w-full rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-100 font-medium p-3 transition-colors duration-200 cursor-pointer disabled:bg-neutral-900 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                            className="w-full rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs uppercase tracking-wider py-3 px-4 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:bg-black/10 dark:disabled:bg-white/5 disabled:text-muted disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
                             disabled={isSubmitted || !guessLocation}
                             onClick={submitGuess}
                         >
                             Submit guess!
                         </button>
                     )}
-                </>
+                </div>
             )}
         </div>
     );
