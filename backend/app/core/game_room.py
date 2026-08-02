@@ -1,7 +1,6 @@
 import uuid
 from app.config import settings
 from .util import get_random_location, calculate_line_distance, calculate_score
-import json
 from redis import Redis
 from .redis_repository import RedisRepository
 from typing import Any
@@ -45,7 +44,7 @@ class GameRoomRepository(RedisRepository):
         game_id = uuid.uuid4().hex
         game_key = f'{self.key}:{game_id}'
         
-        location = get_random_location()
+        location = get_random_location().model_dump(mode='json')
         game_mapping = {
             'id': game_id,
             'key': game_key,
@@ -252,7 +251,7 @@ class GameRoomRepository(RedisRepository):
         '''
         curr_round = self.redis.json().get(game_key, 'round')
         curr_round += 1
-        new_location = get_random_location()
+        new_location = get_random_location().model_dump(mode='json')
         self.redis.json().set(game_key, 'round', curr_round)
         self.redis.json().set(game_key, 'target', new_location)
         players = self.get_player_ids(game_key)

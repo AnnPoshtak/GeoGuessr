@@ -1,7 +1,6 @@
 from app.core.util import calculate_line_distance, calculate_score
 from app.core.util import get_random_location
 from fastapi import Request, APIRouter, HTTPException, status
-from fastapi.encoders import jsonable_encoder
 from app.schemas import StreetViewLocation, MapLocation, SubmitLocationResponse
 
 router = APIRouter(tags=['single_player'])
@@ -10,7 +9,7 @@ router = APIRouter(tags=['single_player'])
 @router.get('/random_location/')
 def random_location(request: Request) -> StreetViewLocation:
     location = get_random_location()
-    request.session['location'] = jsonable_encoder(location)
+    request.session['location'] = location.model_dump(mode='json')
 
     return location
 

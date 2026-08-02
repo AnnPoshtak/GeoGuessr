@@ -8,11 +8,11 @@ from app.schemas import GuessSchema, StreetViewLocation, UserSchema
 
 def test_user_schema_serializes_nested_stats():
     user = {
-        "id": 1,
+        "firebase_uid": "user-1",
         "username": "alice",
         "created_at": datetime(2024, 1, 1, tzinfo=timezone.utc),
         "updated_at": datetime(2024, 1, 2, tzinfo=timezone.utc),
-        "stats": {"id": 2, "total_score": 42, "user_id": 1},
+        "stats": {"id": 2, "total_score": 42, "user_id": "user-1"},
     }
 
     payload = UserSchema.model_validate(user).model_dump(mode="json")

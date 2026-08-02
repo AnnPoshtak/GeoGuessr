@@ -9,7 +9,7 @@ interface GameEndScreenProps {
     teams: Team[];
     game: GameRoom | null | undefined;
     onClose: () => void;
-    scores?: Record<number, number>;
+    scores?: Record<string, number>;
 }
 
 export default function GameEndScreen ({ teams, game, onClose, scores }: GameEndScreenProps){
@@ -75,7 +75,7 @@ export default function GameEndScreen ({ teams, game, onClose, scores }: GameEnd
     );
 
     const teamsForOverlay = teams.length ? teams : game?.teams ?? [];
-    const userTeam = user ? teamsForOverlay.find((t) => t.players.some((p) => p.id === user.id)) : undefined;
+    const userTeam = user ? teamsForOverlay.find((t) => t.players.some((p) => p.firebase_uid === user.firebase_uid)) : undefined;
     const loserTeam = teamsForOverlay.find((t) => t.health === 0);
     const isUserWinner = !!userTeam && userTeam.health > 0 && loserTeam?.name !== userTeam.name;
     const endHeadline = userTeam ? (userTeam.health === 0 ? 'Defeat...' : 'Victory!') : 'Game Over';
@@ -120,7 +120,7 @@ export default function GameEndScreen ({ teams, game, onClose, scores }: GameEnd
                         {teamsForOverlay.map((team) => {
                             const isWinner = team.health > 0 && team !== loserTeam;
                             const connectedPlayers = team.players.filter((p) => p.is_connected);
-                            const teamScore = scores ? team.players.reduce((acc, p) => acc + (scores[p.id] ?? 0), 0) : (team.score || 0);
+                            const teamScore = scores ? team.players.reduce((acc, p) => acc + (scores[p.firebase_uid] ?? 0), 0) : (team.score || 0);
                             return (
                                 <div
                                     key={team.name}

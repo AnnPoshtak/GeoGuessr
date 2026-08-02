@@ -1,10 +1,11 @@
 import { useMultiplayerContext } from '@/context/MultiplayerContext';
-import { gameQueue, gameRoom } from '@/ws/wsClient';
 import GameContent from './GameContent';
 import { useEffect } from 'react';
+import { useSockets } from '@/context/SocketContext';
 
 function MultiplayerGame() {
     const { isJoined, setIsJoined } = useMultiplayerContext();
+    const {gameQueue, gameRoom} = useSockets();
 
     const handleJoinGame = () => {
         setIsJoined(true);
@@ -13,6 +14,7 @@ function MultiplayerGame() {
     // navigate back to menu
 
     useEffect(() => {
+        if (!gameRoom || !gameQueue) return;
         gameRoom.on('game_joined', () => {
             handleJoinGame();
         });
@@ -25,7 +27,7 @@ function MultiplayerGame() {
             gameRoom.off('game_joined');
             gameQueue.off('game_joined');
         };
-    }, []);
+    }, [gameQueue, gameRoom]);
 
     if (!isJoined) {
         return (

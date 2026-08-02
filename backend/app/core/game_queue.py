@@ -4,7 +4,6 @@ import random
 import numpy as np
 from redis import Redis
 from .redis_repository import RedisRepository
-from . import game_room
 
 class GameQueueRepository(RedisRepository):
     '''
@@ -113,7 +112,7 @@ class GameQueueRepository(RedisRepository):
         for i, p in enumerate(player_array):
             res.extend([
                 {
-                    'id': int(pl),
+                    'id': pl,
                     'team': teams[i]
                 } for pl in p
             ])
@@ -121,6 +120,7 @@ class GameQueueRepository(RedisRepository):
 
     
     def create_room(self, players: list, teams: dict = None) -> str:
+        from . import game_room
         '''Creates a GameRoomRepository and returns game key'''
         if len(players) < 2:
             raise ValueError('At least two players are required to start a game!')

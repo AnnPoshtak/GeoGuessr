@@ -1,8 +1,8 @@
 import type { MapLocation } from "@/interfaces/MapLocation";
-import { gameRoom } from "./wsClient";
+import type { Socket } from "socket.io-client";
 
-const submitGuess = (location: MapLocation) => {
-    gameRoom.emit('submit', {
+const submitGuess = (socket: Socket, location: MapLocation) => {
+    socket.emit('submit', {
         guess: {
             lat: location.lat,
             lng: location.lng,

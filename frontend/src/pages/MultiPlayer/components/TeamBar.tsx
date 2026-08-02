@@ -34,7 +34,7 @@ const TeamBar = ({ team, rtl, defeatTeamName }: TeamBarProps) => {
             <div className="w-full flex flex-col gap-2 mb-2">
                 {team.players.map((p) => (
                     <div 
-                        key={p.id || p.username}
+                        key={p.firebase_uid || p.username}
                         className={`flex items-center gap-2 ${
                             rtl ? "flex-row-reverse text-right" : "flex-row text-left"
                         } ${!p.is_connected ? "opacity-40" : ""}`}

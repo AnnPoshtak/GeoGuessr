@@ -1,15 +1,20 @@
+import asyncio
+import json
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
 from app.factories import UserFactory
 from app.core.scheduler import scheduler
 from flask_login import login_user
 from app import game_room, game_queue
-import json
+from app.ws.util import join_game_currently_in
 
 def test_queue_join_empty(socket_client, mocker, app):
     mocker.patch.object(game_queue, 'join_queue', return_value=None)
     mocker.patch.object(game_queue, 'get_queue_key', return_value='testqueue')
     u = UserFactory()
-    mocker.patch.object(game_queue, 'get_queue', return_value=[u.id])
+    mocker.patch.object(game_queue, 'get_queue', return_value=[u.firebase_uid])
     with app.test_request_context():
         login_user(u)
     socket_client.connect('/queue')
@@ -69,7 +74,7 @@ def test_queue_join_non_empty(socket_client, mocker, app):
     mocker.patch.object(game_queue, 'join_queue', return_value='test')
     mocker.patch.object(game_queue, 'get_queue_key', return_value='testqueue')
     u = UserFactory()
-    mocker.patch.object(game_queue, 'get_queue', return_value=[u.id])
+    mocker.patch.object(game_queue, 'get_queue', return_value=[u.firebase_uid])
     with app.test_request_context():
         login_user(u)
     socket_client.connect('/queue')
@@ -134,11 +139,28 @@ def test_queue_quick_reconnect(socket_client, mocker, app):
     }, namespace='/queue')
     mocker.patch.object(game_queue, 'get_player_queue', return_value=game_key)
     socket_client.disconnect('/queue')
-    assert scheduler.get_job(f'send_queue_leave_event:{u.id}')
+    assert scheduler.get_job(f'send_queue_leave_event:{u.firebase_uid}')
     socket_client.connect('/queue')
-    assert not scheduler.get_job(f'send_queue_leave_event:{u.id}')
+    assert not scheduler.get_job(f'send_queue_leave_event:{u.firebase_uid}')
 
     resp = socket_client.get_received('/queue')
     assert len(resp) == 1 # Only queue_joined should be emitted back to player
     assert resp[0]['name'] == 'queue_joined'
-    assert resp[0]['args'][0]['queue'] == [str(u.id)]
+    assert resp[0]['args'][0]['queue'] == [u.firebase_uid]
+
+
+@pytest.mark.asyncio
+async def test_join_game_currently_in_handles_missing_player(mocker):
+    sid = 'sid'
+    current_user = SimpleNamespace(firebase_uid='user-1')
+    mocker.patch('app.ws.util.get_user_by_sid', new=AsyncMock(return_value=current_user))
+    mocker.patch.object(game_room, 'get_current_game', return_value='game-1')
+    mocker.patch.object(game_room, 'get_player', return_value=None)
+    mocker.patch('app.ws.util.join_game', new=AsyncMock(return_value=None))
+    mocker.patch('app.ws.util.safe_remove_job')
+    mocker.patch('app.ws.util.sio.emit', new=AsyncMock(return_value=None))
+    mocker.patch.object(game_room, 'set_player_key')
+
+    result = await join_game_currently_in(sid, '/queue')
+
+    assert result is True

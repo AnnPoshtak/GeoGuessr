@@ -1,8 +1,8 @@
 import type { GameRoom } from "@/interfaces/GameRoom";
-import { gameRoom } from "./wsClient";
+import type { Socket } from "socket.io-client";
 
-const fetchGame = () => {
-    return new Promise<GameRoom>((resolve, reject) => gameRoom.emit('fetch_game', (data: Record<'game', GameRoom>) => {
+const fetchGame = (socket: Socket) => {
+    return new Promise<GameRoom>((resolve, reject) => socket.emit('fetch_game', (data: Record<'game', GameRoom>) => {
         if (data) {
             const game: GameRoom = data.game;
             resolve(game);

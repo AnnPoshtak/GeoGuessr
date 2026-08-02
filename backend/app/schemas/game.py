@@ -38,7 +38,7 @@ class PlayerGameDataSchema(BaseModel):
 class FullPlayerDataSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: str
     username: str
     stats: UserStatsSchema | None = None
     team: str

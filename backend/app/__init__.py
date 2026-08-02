@@ -27,7 +27,6 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SECRET_KEY
 )
-app.state.user_websocket_sessions = {}
 
 app.include_router(single_player.router, prefix='/single-player')
 app.include_router(users.router, prefix='/users')

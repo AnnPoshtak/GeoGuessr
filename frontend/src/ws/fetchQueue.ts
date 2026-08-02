@@ -1,8 +1,8 @@
 import type { GameQueue } from "@/interfaces/GameQueue";
-import { gameQueue } from "./wsClient";
+import type { Socket } from "socket.io-client";
 
-const fetchQueue = () => {
-    return new Promise<GameQueue | null>((resolve, _reject) => gameQueue.emit('fetch_queue', (data: GameQueue | null) => {
+const fetchQueue = (socket: Socket) => {
+    return new Promise<GameQueue | null>((resolve, _reject) => socket.emit('fetch_queue', (data: GameQueue | null) => {
         resolve(data ?? null);
     }));
 };

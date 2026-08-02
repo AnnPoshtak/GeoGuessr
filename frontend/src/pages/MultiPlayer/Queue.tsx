@@ -1,7 +1,7 @@
 import queryClient from "@/api/queryClient";
 import { useMultiplayerContext } from "@/context/MultiplayerContext";
+import { useSockets } from "@/context/SocketContext";
 import type { GameQueue } from "@/interfaces/GameQueue";
-import { gameQueue, gameRoom } from "@/ws/wsClient";
 import { useEffect, type MouseEventHandler } from "react";
 import { toast } from "sonner";
 
@@ -13,18 +13,20 @@ interface QueueProps {
 
 const Queue = ({ queue, join, leave }: QueueProps) => {
     const { setGameKey } = useMultiplayerContext();
+    const { gameQueue, gameRoom } = useSockets();
 
     const messageCallback = (message: string) => {
         toast.error(message);
     }; 
 
     useEffect(() => {
+        if (!gameQueue || !gameRoom) return;
         gameQueue.on('message', messageCallback);
         gameQueue.on('queue_joined', async () => {
             console.log('Joined queue');
             await queryClient.invalidateQueries({ queryKey: ['queue'] });
         });
-        gameQueue.on('queue_left', async (data) => {
+        gameQueue.on('queue_left', async (data: {queue: number[]}) => {
             console.log('Left queue');
             queryClient.setQueryData<GameQueue | null>(['queue'], (old) => {
                 if (!old) return null;
@@ -32,7 +34,7 @@ const Queue = ({ queue, join, leave }: QueueProps) => {
             });
         });
 
-        gameQueue.on('game_started', (data) => {
+        gameQueue.on('game_started', (data: { game_key: string }) => {
             setGameKey(data.game_key);
             gameRoom.emit('join', {
                 'game_key': data.game_key
@@ -45,7 +47,7 @@ const Queue = ({ queue, join, leave }: QueueProps) => {
             gameQueue.off('game_started');
             gameQueue.off('message', messageCallback);
         };
-    }, []);
+    }, [gameQueue, gameRoom]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[250px] w-full text-center">

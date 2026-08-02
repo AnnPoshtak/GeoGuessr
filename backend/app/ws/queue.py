@@ -1,34 +1,46 @@
 from app.core import validate_player_count, game_queue, game_room
-from flask_socketio import Namespace, emit, join_room, leave_room, close_room, send
-from flask_login import current_user
-from .util import authenticated_only
 from app.core.scheduler import scheduler
-from .util import join_game_currently_in, safe_remove_job
+from .util import join_game_currently_in, safe_remove_job, get_user_by_sid, save_user_session
+from app.models import UserModel
 import datetime
-from app.config import settings
+from app.config import settings, logger
 from app.core.scheduler import send_queue_leave_event
+import socketio
+from . import sio
 
-class QueueNamespace(Namespace):
-    @authenticated_only
-    def on_connect(self):
-        safe_remove_job(f'send_queue_leave_event:{current_user.id}')
-        join_game_currently_in()
-    
-    def on_disconnect(self, reason):
-        if not current_user.is_authenticated:
+class QueueNamespace(socketio.AsyncNamespace):
+    async def on_connect(self, sid: str, environ, auth: str):
+        user = await save_user_session(sid, auth, '/queue')
+        if not user:
+            await sio.disconnect(sid)
             return
+        safe_remove_job(f'send_queue_leave_event:{user.firebase_uid}')
+        await join_game_currently_in(sid, '/queue')
+    
+    async def on_disconnect(self, sid: str, reason=None):
+        try:
+            current_user: UserModel = await get_user_by_sid(sid, '/queue')
+        except Exception as e:
+            logger.error(f'User not found: {e}')
+            return
+        
+        if not current_user:
+            return
+
         run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.leave_queue_event_interval)
         scheduler.add_job(
-            f'send_queue_leave_event:{current_user.id}',
-            send_queue_leave_event, 
-            args=(current_user.id,),
+            send_queue_leave_event,
+            args=(current_user.firebase_uid,),
+            id=f'send_queue_leave_event:{current_user.firebase_uid}',
             next_run_time=run_time,
             replace_existing=True
         )
+        async with sio.session(sid, namespace='/queue') as session:
+            session.clear()
 
-    @authenticated_only
-    def on_fetch_queue(self):
-        queue = game_queue.get_player_queue(current_user.id)
+    async def on_fetch_queue(self, sid: str):
+        current_user: UserModel = await get_user_by_sid(sid, '/queue')
+        queue = game_queue.get_player_queue(current_user.firebase_uid)
         if not queue:
             return
         return {
@@ -37,45 +49,45 @@ class QueueNamespace(Namespace):
             'player_count': int(queue.split(':')[-1])
         }
 
-    @authenticated_only
-    def on_join(self, data: dict = {}):
+    async def on_join(self, sid: str, data: dict = {}):
+        current_user: UserModel = await get_user_by_sid(sid, '/queue')
         if not data: 
             return
-        if not current_user.is_authenticated:
+        if not current_user:
             return
         if not 'player_count' in data:
-            return send('Please select the queue you wish to join')
-        if game_queue.is_player_in_queue(current_user.id):
-            return send('You have already joined the queue')
-        if game_room.get_current_game(current_user.id):
-            return send("You can't join a queue when you are in active game")
+            return await sio.send('Please select the queue you wish to join', namespace='/queue')
+        if game_queue.is_player_in_queue(current_user.firebase_uid):
+            return await sio.send('You have already joined the queue', namespace='/queue')
+        if game_room.get_current_game(current_user.firebase_uid):
+            return await sio.send("You can't join a queue when you are in active game", namespace='/queue')
         try:
             player_count = int(data['player_count'])
             validate_player_count(player_count)
         except ValueError:
-            return send('You have tried to join the wrong queue!')
-        game_key = game_queue.join_queue(current_user.id, player_count)
+            return await sio.send('You have tried to join the wrong queue!', namespace='/queue')
+        game_key = game_queue.join_queue(current_user.firebase_uid, player_count)
         queue_key = game_queue.get_queue_key(player_count)
-        join_room(queue_key)
+        await sio.enter_room(sid, queue_key, namespace=self.namespace)
         queue = game_queue.get_queue(player_count)
         if game_key:
-            emit('game_started', {
+            await sio.emit('game_started', {
                 'game_key': game_key
-            }, to=queue_key)
-            return close_room(queue_key)
+            }, to=queue_key, namespace='/queue')
+            return await sio.close_room(queue_key, namespace='/queue')
         
-        emit('queue_joined', {
+        await sio.emit('queue_joined', {
             'queue': queue
-        }, to=queue_key)
+        }, to=queue_key, namespace='/queue')
     
-    @authenticated_only
-    def on_leave(self):
-        if not game_queue.is_player_in_queue(current_user.id):
-            return send('You have to be in the queue to leave it!')
-        key = game_queue.get_player_queue(current_user.id)
-        game_queue.leave_queue(current_user.id, key)
+    async def on_leave(self, sid: str):
+        current_user: UserModel = await get_user_by_sid(sid, '/queue')
+        if not game_queue.is_player_in_queue(current_user.firebase_uid):
+            return await sio.send('You have to be in the queue to leave it!', namespace='/queue')
+        key = game_queue.get_player_queue(current_user.firebase_uid)
+        game_queue.leave_queue(current_user.firebase_uid, key)
         queue = game_queue.get_queue(key)
-        emit('queue_left', {
+        await sio.emit('queue_left', {
             'queue': queue
-        }, to=key)
-        leave_room(key)
+        }, to=key, namespace='/queue')
+        await sio.leave_room(sid, key, namespace='/queue')

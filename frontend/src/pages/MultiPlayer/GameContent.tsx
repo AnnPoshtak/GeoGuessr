@@ -13,7 +13,6 @@ import type { MapLocation } from "@/interfaces/MapLocation";
 import type { Team } from "@/interfaces/Team";
 import fetchGame from "@/ws/fetchGame";
 import submitGuess from "@/ws/submitGuess";
-import { gameQueue, gameRoom } from "@/ws/wsClient";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
@@ -22,6 +21,8 @@ import GameEndScreen from "./components/GameEndScreen";
 import { useUser } from "@/context/UserContext.tsx";
 import type { StreetViewLocationFromApi } from "@/interfaces/StreetViewLocationFromApi";
 import { useNavigate } from "react-router-dom";
+import { useSockets } from "@/context/SocketContext";
+import type { User } from "@/interfaces/Player";
 
 interface GameState {
     isEnded: boolean;
@@ -32,7 +33,7 @@ interface GameState {
     currentCooldown: number;
     cooldownMessage: string | null;
     guesses: MapLocation[];
-    scores?: Record<number, number>;
+    scores?: Record<string, number>;
 }
 interface NewRoundData {
     target: MapLocation;
@@ -50,6 +51,7 @@ interface EndGameData extends NewRoundData {
 const GameContent = () => {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
     const { gameKey, isJoined } = useMultiplayerContext();
+    const { gameQueue, gameRoom } = useSockets();
 
     const setIsPlayerConnected = (playerId: string, value: boolean) => {
         setGameState(prev => ({...prev, teams: prev.teams.map(t =>
@@ -100,19 +102,20 @@ const GameContent = () => {
 
     useEffect(() => {
         if (!isJoined) return;
+        if (!gameRoom || !gameQueue) return;
 
         gameRoom.on('message', messageCallback);
         gameRoom.on('new_round', newRoundCallback);
         gameQueue.on('new_round', newRoundCallback);
 
-        gameRoom.on('player_reconnected', (data) => {
-            setIsPlayerConnected(data.id, true);
+        gameRoom.on('player_reconnected', (data: User) => {
+            setIsPlayerConnected(data.firebase_uid, true);
             toast.info(`Player ${data.username} has reconnected to the game!`);
         });
 
-        gameRoom.on('player_disconnected', (data) => {
-            setIsPlayerConnected(data.id, false);
-            if (data.id === user?.firebase_uid) navigate('/');
+        gameRoom.on('player_disconnected', (data: User) => {
+            setIsPlayerConnected(data.firebase_uid, false);
+            if (data.firebase_uid === user?.firebase_uid) navigate('/');
             toast.info(`Player ${data.username} has disconnected from the game!`);
         });
 
@@ -140,7 +143,6 @@ const GameContent = () => {
         }
 
         const realTargetCallback = (data: {target: StreetViewLocationFromApi}) => {
-            console.log(data.target, viewRef.current);
             if (viewRef.current) {
                 viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
                 viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
@@ -173,7 +175,7 @@ const GameContent = () => {
             gameRoom.off('real_target', realTargetCallback);
             gameQueue.off('game_end', gameEndCallback);
         };
-    }, [isJoined, gameKey, map]);
+    }, [isJoined, gameKey, map, gameRoom, gameQueue]);
 
     useEffect(() => {
         if (gameState.currentCooldown <= 0) return;
@@ -193,7 +195,8 @@ const GameContent = () => {
     const { data: game } = useQuery<GameRoom | null>({
         queryKey: ['game', gameKey],
         queryFn: async () => {
-            const data = await fetchGame();
+            if (!gameRoom) return null;
+            const data = await fetchGame(gameRoom);
             if (viewRef.current) {
                 viewRef.current.setPov({ heading: data.target.heading, pitch: 5 });
                 viewRef.current.setPosition({ lat: data.target.lat, lng: data.target.lng });
@@ -210,7 +213,7 @@ const GameContent = () => {
             }))
             return data;
         },
-        enabled: isJoined && !gameState.isEnded,
+        enabled: isJoined && !gameState.isEnded && !!gameRoom,
         staleTime: Infinity
     });
 
@@ -257,7 +260,8 @@ const GameContent = () => {
 
     const submit = () => {
         if (!guessLocation) return;
-        submitGuess(guessLocation);
+        if (!gameRoom) return;
+        submitGuess(gameRoom, guessLocation);
         setIsSubmitted(true);
         setGameState((p) => ({...p}));
     };

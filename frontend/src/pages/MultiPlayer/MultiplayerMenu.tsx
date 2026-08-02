@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayerContext } from '@/context/MultiplayerContext';
-import { gameQueue, gameRoom } from '@/ws/wsClient';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext.tsx';
@@ -11,11 +10,13 @@ import fetchQueue from '@/ws/fetchQueue';
 import queryClient from '@/api/queryClient';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { WifiOff } from 'lucide-react';
+import { useSockets } from '@/context/SocketContext';
 
 export default function MultiplayerMenu() {
     const isOnline = useOnlineStatus();
     const navigate = useNavigate();
     const { setIsJoined } = useMultiplayerContext();
+    const {gameQueue, gameRoom} = useSockets();
 
     const { user, isUserLoading } = useUser();
     const [selectedMode, setSelectedMode] = useState<'1v1' | '2v2' | null>(null);
@@ -23,10 +24,11 @@ export default function MultiplayerMenu() {
     const { data: queue } = useQuery<GameQueue | null>({
         queryKey: ['queue'],
         queryFn: async () => {
-            const data = await fetchQueue();
+            if (!gameQueue) return null;
+            const data = await fetchQueue(gameQueue);
             return data;
         },
-        enabled: !!user,
+        enabled: !!user && !!gameQueue,
         retry: false,
         staleTime: Infinity
     });
@@ -55,6 +57,7 @@ export default function MultiplayerMenu() {
 
     const joinQueue = () => {
         if (!selectedMode) return;
+        if (!gameQueue) return;
         const playerCount = selectedMode === '1v1' ? 2 : 4;
         gameQueue.emit('join', {
             player_count: playerCount,
@@ -62,6 +65,7 @@ export default function MultiplayerMenu() {
     };
 
     const leaveQueue = () => {
+        if (!gameQueue) return;
         gameQueue.emit('leave');
         queryClient.invalidateQueries({ queryKey: ['queue'] });
         setSelectedMode(null);
@@ -73,6 +77,7 @@ export default function MultiplayerMenu() {
     };
 
     useEffect(() => {
+        if (!gameQueue || !gameRoom) return;
         gameRoom.on('game_joined', handleJoinGame);
 
         gameQueue.on('game_joined', handleJoinGame);
@@ -81,7 +86,7 @@ export default function MultiplayerMenu() {
             gameRoom.off('game_joined', handleJoinGame);
             gameQueue.off('game_joined', handleJoinGame);
         };
-    }, []);
+    }, [gameQueue, gameRoom]);
 
     if (user === undefined) {
         return (

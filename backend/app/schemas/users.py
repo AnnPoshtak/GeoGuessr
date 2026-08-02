@@ -14,7 +14,7 @@ class UserStatsSchema(BaseModel):
 
     id: int
     total_score: int
-    user_id: int
+    user_id: str
 
 class UserPublicSchema(UserSchema):
     model_config = ConfigDict(from_attributes=True)
