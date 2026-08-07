@@ -13,7 +13,7 @@ async def move_next_round(game_key: str):
     target = game['target']
     team_scores = []
     winning_team = game_room.get_winning_team(game_key)
-    teams = get_full_teams_data(game_key)
+    teams = await get_full_teams_data(game_key)
     for team in teams:
         avg_score = game_room.get_team_average_score(game_key, team['name'])
         team_scores.append(avg_score)
@@ -116,12 +116,12 @@ class GameNamespace(socketio.AsyncNamespace):
                     next_run_time=run_time,
                     replace_existing=False
                 )
-        game['teams'] = get_full_teams_data(game_key)
+        game['teams'] = await get_full_teams_data(game_key)
         teams = []
         for t in game['teams']:
             players = []
             for p in t['players']:
-                players.append(get_full_player_data(game_key, p['id']))
+                players.append(await get_full_player_data(game_key, p['id']))
             t['players'] = players
             teams.append(t)
         game['multiplier'] = round(int(game['round']) * settings.round_health_multiplier, 1)

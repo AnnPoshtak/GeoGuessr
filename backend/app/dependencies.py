@@ -2,6 +2,7 @@ import asyncio
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import select, or_
+from sqlalchemy.orm import selectinload
 from fastapi.security import HTTPBearer
 from firebase_admin import auth
 from firebase_admin.auth import (
@@ -28,21 +29,24 @@ async def get_or_create_user_from_token(token: dict) -> UserModel:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Authentication service error",
         ) from e
-    with SessionLocal() as session:
-        try:
-            user = await get_user(u.uid)
+    async with SessionLocal() as session:
+        statement = select(UserModel).where(
+            or_(UserModel.firebase_uid == u.uid, UserModel.email == u.email)
+        ).options(selectinload(UserModel.stats))
+        user = await session.scalar(statement)
+        if user:
             return user
-        except HTTPException as e:
-            if e.status_code == status.HTTP_404_NOT_FOUND:
-                if not u.display_name:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST, detail="Full name is null!"
-                    )
-                user = UserModel(firebase_uid=u.uid, username=u.display_name, email=u.email)
-                session.add(user)
-                session.commit()
-                session.refresh(user)
-                return user
+
+        if not u.display_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Full name is null!"
+            )
+        user = UserModel(firebase_uid=u.uid, username=u.display_name, email=u.email)
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        await session.refresh(user, attribute_names=["stats"])
+        return user
 
 async def get_current_user(
     token: Annotated[HTTPBearer | str, Depends(HTTPBearer())]
@@ -69,11 +73,11 @@ async def get_current_user(
     return user
 
 async def get_user(identifier: str | int):
-    with SessionLocal() as session:
+    async with SessionLocal() as session:
         statement = select(UserModel).where(
             or_(UserModel.firebase_uid == identifier, UserModel.email == identifier)
-        )
-        user = (session.execute(statement)).scalar()
+        ).options(selectinload(UserModel.stats))
+        user = await session.scalar(statement)
 
         if not user:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found!")

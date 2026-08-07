@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from sqlalchemy import select
 from flask import url_for
@@ -6,6 +7,11 @@ from app.factories import UserFactory, UserModel
 from app import oauth
 from app.config import settings
 from app.db import SessionLocal
+
+
+async def get_user_by_username(username: str):
+    async with SessionLocal() as session:
+        return await session.scalar(select(UserModel).where(UserModel.username == username))
 
 def test_callback_wrong_provider(client):
     resp = client.get(url_for('oauth.oauth_callback', provider='gitlab'))
@@ -39,7 +45,6 @@ def test_callback_create_user(client, app, mocker):
         resp = client.get(url_for('oauth.oauth_callback', provider='google'))
         assert resp.status_code == 302
         assert settings.FRONTEND_OAUTH_CALLBACK_URL in resp.location
-        with SessionLocal() as session:
-            user = session.scalar(select(UserModel).where(UserModel.username == 'johndoe@gmail.com'))
+        user = asyncio.run(get_user_by_username('johndoe@gmail.com'))
         assert user is not None
         assert current_user.is_authenticated

@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.core import game_room
 from app.schemas import FullPlayerDataSchema, UserPublicSchema
 from app.models import UserModel
@@ -66,19 +67,23 @@ async def join_game_currently_in(sid: str, namespace: str) -> bool:
 
     return True
 
-def get_full_player_data(game_key: str, player_id: int) -> dict:
+async def get_full_player_data(game_key: str, player_id: int) -> dict:
     from app.db import SessionLocal
 
-    with SessionLocal() as session:
-        u = session.scalar(select(UserModel).where(UserModel.firebase_uid == player_id))
+    async with SessionLocal() as session:
+        u = await session.scalar(
+            select(UserModel)
+            .where(UserModel.firebase_uid == player_id)
+            .options(selectinload(UserModel.stats))
+        )
     player_data = game_room.get_player(game_key, player_id)
     player_data.update(UserPublicSchema.model_validate(u).model_dump())
     return FullPlayerDataSchema.model_validate(player_data).model_dump(mode='json')
 
-def get_full_teams_data(game_key: str) -> list[dict]:
+async def get_full_teams_data(game_key: str) -> list[dict]:
     teams = game_room.get_teams(game_key)
     for i, t in enumerate(teams):
-        teams[i]['players'] = [get_full_player_data(game_key, p['id']) for p in t['players']]
+        teams[i]['players'] = [await get_full_player_data(game_key, p['id']) for p in t['players']]
 
     return teams
 

@@ -1,5 +1,6 @@
 import datetime
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.config import settings
 from app.db import SessionLocal
 from app.models import UserModel
@@ -21,14 +22,15 @@ async def record_technical_defeat(game_key: str, team: str) -> None:
     game = game_room.get_game(game_key)
     if not game or not 'teams' in game:
         return
-    teams = [t for t in get_full_teams_data(game_key) if t['name'] != team]
+    all_teams = await get_full_teams_data(game_key)
+    teams = [t for t in all_teams if t['name'] != team]
     winning_team = game_room.get_winning_team(game_key, teams)
     await sio.emit(
         'game_end',
         {
             'winner': winning_team,
             'target': game['target'],
-            'teams': get_full_teams_data(game_key),
+            'teams': all_teams,
             'scores': game_room.get_scores(game_key),
         }, 
         to=game_key, 
@@ -39,60 +41,68 @@ async def record_technical_defeat(game_key: str, team: str) -> None:
 async def send_disconnect_event(game_key: str, user_id: str):
     from app.schemas import UserPublicSchema
     from app.ws import sio
-    with SessionLocal() as session:
-        user = session.scalar(select(UserModel).where(UserModel.firebase_uid == user_id))
-        if not user:
-            return
-        player = game_room.get_player(game_key, user.firebase_uid)
-        if not player or not player['is_connected']:
-            return
-        if game_key:
-            game_room.set_player_key(game_key, user.firebase_uid, 'is_connected', False)
-            run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.defeat_team_interval)
-            team = game_room.get_player(game_key, user.firebase_uid)['team']
-            record_defeat = True
-            for p in game_room.get_team(game_key, team)['players']:
-                if game_room.get_player(game_key, p)['is_connected']:
-                    record_defeat = False
-                    break
-            if record_defeat:
-                scheduler.add_job(
-                    record_technical_defeat,
-                    args=(game_key, team),
-                    id=f'record_technical_defeat:{game_key}:{team}',
-                    next_run_time=run_time,
-                    replace_existing=True
-                )
-                await sio.emit(
-                    'record_defeat_started',
-                    {'team': team},
-                    to=game_key,
-                    namespace='/game'
-                )
-            await sio.emit(
-                'player_disconnected', 
-                UserPublicSchema().model_validate(user).model_dump(mode='json'),
+    async with SessionLocal() as session:
+        user = await session.scalar(
+            select(UserModel)
+            .where(UserModel.firebase_uid == user_id)
+            .options(selectinload(UserModel.stats))
+        )
+    if not user:
+        return
+    player = game_room.get_player(game_key, user.firebase_uid)
+    if not player or not player['is_connected']:
+        return
+    if game_key:
+        game_room.set_player_key(game_key, user.firebase_uid, 'is_connected', False)
+        run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.defeat_team_interval)
+        team = game_room.get_player(game_key, user.firebase_uid)['team']
+        record_defeat = True
+        for p in game_room.get_team(game_key, team)['players']:
+            if game_room.get_player(game_key, p)['is_connected']:
+                record_defeat = False
+                break
+        if record_defeat:
+            scheduler.add_job(
+                record_technical_defeat,
+                args=(game_key, team),
+                id=f'record_technical_defeat:{game_key}:{team}',
+                next_run_time=run_time,
+                replace_existing=True
             )
+            await sio.emit(
+                'record_defeat_started',
+                {'team': team},
+                to=game_key,
+                namespace='/game'
+            )
+        await sio.emit(
+            'player_disconnected',
+            UserPublicSchema.model_validate(user).model_dump(mode='json'),
+        )
 
 async def send_queue_leave_event(user_id: str):
     from app.ws import sio
-    with SessionLocal() as session:
-        user = session.scalar(select(UserModel).where(UserModel.firebase_uid == user_id))
-        if not user:
-            return
-        if not game_queue.is_player_in_queue(user_id):
-            return
-        key = game_queue.get_player_queue(user_id)
-        game_queue.leave_queue(user_id, key)
-        queue = game_queue.get_queue(key)
-        await sio.emit(
-            'queue_left', 
-            {
-                'queue': queue
-            }, 
-            to=key, 
-            namespace='/queue'
+    async with SessionLocal() as session:
+        user = await session.scalar(
+            select(UserModel)
+            .where(UserModel.firebase_uid == user_id)
+            .options(selectinload(UserModel.stats))
         )
+    if not user:
+        return
+    if not game_queue.is_player_in_queue(user_id):
+        return
+    key = game_queue.get_player_queue(user_id)
+    game_queue.leave_queue(user_id, key)
+    queue = game_queue.get_queue(key)
+    await sio.emit(
+        'queue_left',
+        {
+            'queue': queue
+        },
+        to=key,
+        namespace='/queue'
+    )
 
 async def send_real_target(game_key: str):
     from app.ws import sio

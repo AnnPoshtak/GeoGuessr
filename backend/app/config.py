@@ -76,6 +76,18 @@ class Settings(BaseSettings):
         self.round_automove_cooldown = int(self.round_automove_cooldown / 1000)
         return self
 
+    @property
+    def ASYNC_SQLALCHEMY_DATABASE_URI(self) -> str:
+        uri = self.SQLALCHEMY_DATABASE_URI
+        if uri.startswith('postgresql+asyncpg://'):
+            return uri
+        for scheme in ('postgresql+psycopg2://', 'postgresql://', 'postgres://'):
+            if uri.startswith(scheme):
+                return uri.replace(scheme, 'postgresql+asyncpg://', 1)
+        if uri.startswith('sqlite://'):
+            return uri.replace('sqlite://', 'sqlite+aiosqlite://', 1)
+        return uri
+
     @classmethod
     def settings_customise_sources(cls, settings_cls, env_settings, dotenv_settings, **kwargs):
         return (
