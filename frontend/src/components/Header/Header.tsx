@@ -16,10 +16,6 @@ export const Header = () => {
                     </h1>
                     
                     <div className="flex flex-row items-center gap-4 sm:gap-6">
-                        <div className="flex flex-row items-center gap-2 cursor-pointer text-muted hover:text-dark transition-all py-1.5 px-3 rounded-xl hover:bg-white/20 dark:hover:bg-black/20 select-none" onClick={() => navigate("/how-to-play")}>
-                            <CircleHelp size={18} className="stroke-[2.5]" />
-                            <span className="text-sm font-semibold tracking-wide hidden sm:inline">How to play</span>
-                        </div>
                         <ThemeToggle />
                         <VolumeControl />
                         <Dropdown />
