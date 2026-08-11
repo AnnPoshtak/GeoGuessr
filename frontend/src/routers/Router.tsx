@@ -8,7 +8,6 @@ import MultiplayerGame from "@/pages/MultiPlayer/MultiPlayer.tsx";
 import MultiplayerMenu from "@/pages/MultiPlayer/MultiplayerMenu.tsx";
 import OAuthCallback from "@/pages/OAuthCallback/OAuthCallback.tsx";
 import SinglePlayer from "@/pages/SinglePlayer/SinglePlayer.tsx";
-import HowToPlay from "@/pages/HowToPlay/HowToPlay";
 
 function Router() {
     return (
