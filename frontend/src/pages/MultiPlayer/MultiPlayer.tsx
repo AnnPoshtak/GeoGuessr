@@ -2,6 +2,7 @@ import { useMultiplayerContext } from '@/context/MultiplayerContext';
 import { gameQueue, gameRoom } from '@/ws/wsClient';
 import GameContent from './GameContent';
 import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 function MultiplayerGame() {
     const { isJoined, setIsJoined } = useMultiplayerContext();
@@ -9,8 +10,6 @@ function MultiplayerGame() {
     const handleJoinGame = () => {
         setIsJoined(true);
     };
-
-    // navigate back to menu
 
     useEffect(() => {
         gameRoom.on('game_joined', () => {
@@ -29,28 +28,21 @@ function MultiplayerGame() {
 
     if (!isJoined) {
         return (
-            <div className="relative w-full h-screen flex flex-col items-center bg-[#080f1a] font-sans overflow-hidden text-white">
-                <div className="absolute inset-0 pointer-events-none" style={{
-                    backgroundImage: `
-                      radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.8) 0%, transparent 100%),
-                      radial-gradient(1.5px 1.5px at 22% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
-                      radial-gradient(1px 1px at 65% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
-                      radial-gradient(1px 1px at 80% 28%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                      radial-gradient(1px 1px at 45% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
-                      radial-gradient(1px 1px at 5% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
-                      radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
-                      radial-gradient(1px 1px at 35% 88%, rgba(255,255,255,0.4) 0%, transparent 100%)
-                    `
-                }} />
-                <div className="relative z-20 flex flex-col items-center justify-center h-full gap-4 text-center">
-                    <p className="text-gray-300">Loading game...</p>
+            <div className="relative w-screen h-screen overflow-hidden flex flex-col items-center justify-center font-sans bg-cover bg-center bg-no-repeat bg-game-bg">
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/5 dark:from-black/20 dark:to-black/40 pointer-events-none z-0" />
+
+                <div className="relative z-10 flex flex-col items-center justify-center p-8 rounded-3xl bg-glass-bg border border-glass-border backdrop-blur-md shadow-2xl gap-4 text-center">
+                    <Loader2 className="w-10 h-10 text-accent animate-spin" />
+                    <div className="text-xs font-black uppercase tracking-widest text-muted animate-pulse">
+                        Loading game session...
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="w-screen h-screen fixed inset-0 z-50 bg-[#080f1a]">
+        <div className="w-screen h-screen fixed inset-0 z-50 bg-game-bg">
             <GameContent />
         </div>
     );
