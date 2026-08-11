@@ -4,11 +4,13 @@ import { Route, Routes } from "react-router-dom";
 import { GameContextProvider } from "@/context/GameContext.tsx";
 import { MultiplayerContextProvider } from "@/context/MultiplayerContext.tsx";
 import { SEO } from "@/SEO.tsx";
+
 const Home = lazy(() => import("@/pages/Home/Home.tsx"));
 const SinglePlayer = lazy(() => import("@/pages/SinglePlayer/SinglePlayer.tsx"));
 const MultiplayerMenu = lazy(() => import("@/pages/MultiPlayer/MultiplayerMenu.tsx"));
 const MultiplayerGame = lazy(() => import("@/pages/MultiPlayer/MultiPlayer.tsx"));
 const OAuthCallback = lazy(() => import("@/pages/OAuthCallback/OAuthCallback.tsx"));
+const Profile = lazy(() => import("@/pages/Profile/Profile.tsx"));
 const NotFound = lazy(() => import("@/pages/NotFound/NotFound.tsx"));
 
 const PageLoader = () => (
@@ -40,6 +42,7 @@ function Router() {
                         <SinglePlayer />
                     </GameContextProvider>
                 } />
+
                 <Route path="/multiplayer" element={
                     <>
                         <SEO 
@@ -49,6 +52,7 @@ function Router() {
                         <MultiplayerMenu />
                     </>
                 } />
+
                 <Route path="/multiplayer-game" element={
                     <GameContextProvider>
                         <MultiplayerContextProvider>
@@ -57,12 +61,21 @@ function Router() {
                         </MultiplayerContextProvider>
                     </GameContextProvider>
                 } />
+
+                <Route path="/profile" element={
+                    <>
+                        <SEO title="My Profile" noindex />
+                        <Profile />
+                    </>
+                } />
+
                 <Route path="/oauth/callback" element={
                     <>
                         <SEO title="Authenticating..." noindex />
                         <OAuthCallback />
                     </>
                 } />
+
                 <Route path="*" element={
                     <>
                         <SEO title="Page Not Found (404)" noindex />
