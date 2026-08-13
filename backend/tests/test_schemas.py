@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from app.schemas import GuessSchema, StreetViewLocation, UserSchema
+from app.schemas import MapLocation, StreetViewLocation, UserSchema
 
 
 def test_user_schema_serializes_nested_stats():
@@ -24,7 +24,7 @@ def test_user_schema_serializes_nested_stats():
 
 def test_guess_schema_rejects_invalid_payload():
     with pytest.raises(ValidationError):
-        GuessSchema.model_validate({"lat": "bad", "lng": 12.3})
+        MapLocation.model_validate({"lat": "bad", "lng": 12.3})
 
 
 def test_street_view_location_requires_heading():

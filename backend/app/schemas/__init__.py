@@ -1,9 +1,9 @@
 from .game import (
     FullPlayerDataSchema,
-    GuessSchema,
     MapLocation,
-    PlayerGameDataSchema,
+    MapLocation,
     StreetViewLocation,
-    SubmitLocationResponse
+    SubmitLocationResponse,
+    CreatePlayer
 )
 from .users import UserPublicSchema, UserSchema, UserStatsSchema

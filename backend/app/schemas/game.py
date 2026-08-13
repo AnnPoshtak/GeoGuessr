@@ -4,7 +4,7 @@ from .users import UserStatsSchema
 
 
 class MapLocation(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra='ignore')
 
     lat: float
     lng: float
@@ -14,26 +14,15 @@ class StreetViewLocation(MapLocation):
     heading: int
 
 
-class GuessSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    lat: float
-    lng: float
-
 class SubmitLocationResponse(BaseModel):
     guess: MapLocation
     target: MapLocation
     distance: float
     score: float
 
-
-class PlayerGameDataSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
+class CreatePlayer(BaseModel):
+    firebase_uid: str
     team: str
-    guess: GuessSchema | None = None
-
 
 class FullPlayerDataSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -42,5 +31,5 @@ class FullPlayerDataSchema(BaseModel):
     username: str
     stats: UserStatsSchema | None = None
     team: str
-    guess: GuessSchema | None = None
+    guess: MapLocation | None = None
     is_connected: bool | None = None

@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     SQLALCHEMY_DATABASE_URI: str
     FRONTEND_URL: str
-    REDIS_URL: str
+    REDIS_OM_URL: str
+    REDIS_CACHE_URL: str
     HOST: str
     PORT: int
     DEBUG: bool

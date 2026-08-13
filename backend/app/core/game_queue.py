@@ -2,21 +2,36 @@ from app.core.util import validate_player_count
 from app.config import settings
 import random
 import numpy as np
-from redis import Redis
-from .redis_repository import RedisRepository
+from app.schemas import CreatePlayer
 
-class GameQueueRepository(RedisRepository):
+class GameQueueRepository():
     '''
     A class used to handle matchmaking logic. Used only to make redis interactions.
     Allows to join and leave queues. 
     Also handles room creation logic when queue has enough players to start a game
     '''
-    def __init__(self, redis: Redis):
-        super().__init__(redis=redis, key='gamequeue')
+    def __init__(self, redis):
+        if not redis:
+            raise ValueError('Redis instance has to be provided!')
+        self.redis = redis
+        self.key = 'gamequeue'
+        self.players_key = f'{self.key}:all_players'
 
-    def get_queue(self, identifier: str | int) -> list:
+    def get_queue_key(self, player_count: int) -> str:
+        '''A helper function used to get a queue key for `player_count`'''
+        validate_player_count(player_count)
+        return f'{self.key}:{player_count}'
+    
+    def get_all_queue_keys(self) -> list[str]:
+        '''Returns all queues'''
+        res = []
+        for p_c in settings.game_playercount:
+            res.append(self.get_queue_key(p_c))
+        return res
+
+    async def get_queue(self, identifier: str | int) -> list:
         '''
-        A helper function used to acces the game queue
+        A helper function used to access the game queue
         
         :param identifier: can be either queue key or player count
         :type identifier: str | int
@@ -27,66 +42,60 @@ class GameQueueRepository(RedisRepository):
             key = self.get_queue_key(identifier)
         else:
             key = identifier
-        return self.redis.lrange(key, 0, -1)
-
-    def get_player_queue(self, player_id: int) -> str | None:
-        '''Returns the queue key the player is currently in'''
-        return self.redis.get(f'{player_id}:queue')
+        return await self.redis.lrange(key, 0, -1)
     
-    def is_player_in_queue(self, player_id: int) -> bool:
+    async def get_all_players_in_queues(self) -> set:
+        '''Returns all players currently waiting in any queue'''
+        return await self.redis.smembers(self.players_key)
+
+    async def is_player_in_queue(self, player_id: int) -> bool:
         '''Returns `True` if player is in a queue'''
-        return bool(self.get_player_queue(player_id))
+        q = await self.get_all_players_in_queues()
+        return str(player_id) in q or player_id in q
     
-    def get_queue_key(self, player_count: int) -> str:
-        '''A helper function used to get a queue key for `player_count`'''
-        validate_player_count(player_count)
-        return f'{self.key}:{player_count}'
-    
-    def get_all_queue_keys(self, ) -> list[str]:
-        '''Returns all queues'''
-        res = []
-        player_count = settings.game_playercount
-        for p_c in player_count:
-            res.append(self.get_queue_key(p_c))
-        
-        return res
+    async def get_player_queue(self, player_id: int) -> str | None:
+        '''Returns the queue key the player is currently in'''
+        for key in self.get_all_queue_keys():
+            q = await self.get_queue(key)
+            if str(player_id) in q or player_id in q:
+                return key
 
-    def join_queue(self, player_id: int, player_count: int) -> None | str:
+    async def join_queue(self, user_id: int, player_count: int) -> None | str:
         '''
-        Joins player `player_id` to `player_count`.
-        If `queue length + 1` is equal to player_count of this queue, then remove the `player_count - 1` 
+        Joins user `user_id` to `player_count`.
+        If `queue length + 1` is equal to user_count of this queue, then remove the `player_count - 1` 
         members from the queue and create a new room.
         If user is already in a queue, nothing happens.
         It does not check if user is particapating in an active game, so it is required to handle this logic by yourself.
         
-        :param player_id: player to join the queue
-        :type player_id: int
+        :param user_id: user to join the queue
+        :type user_id: int
         :param player_count: used to specify which queue to join. For example, 2 means join 1 vs 1 queue, 4 means 2 vs 2 and so on.
         Has to be in `settings.game_playercount`
         :type player_count: int
         '''
         validate_player_count(player_count)
-        q = self.get_queue(player_count)
         key = self.get_queue_key(player_count)
-        if self.is_player_in_queue(player_id):
+        if await self.is_player_in_queue(user_id):
             return
+        q = await self.get_queue(key)
         if len(q) == player_count - 1:
-            players = self.redis.rpop(key, player_count - 1)
-            self.redis.delete(f'{player_id}:queue')
-            players.append(player_id)
-            game = self.create_room(players)
+            players = await self.redis.rpop(key, player_count - 1)
+            await self.redis.srem(self.players_key, *players)
+            players.append(user_id)
+            game = await self.create_room(players)
             return game
 
-        self.redis.lpush(key, player_id)
-        self.redis.set(f'{player_id}:queue', key)
+        await self.redis.lpush(key, user_id)
+        await self.redis.sadd(self.players_key, user_id)
     
-    def leave_queue(self, player_id: int, queue: str) -> None:
+    async def leave_queue(self, player_id: int, queue: str) -> None:
         '''Remove player `player_id` from queue `queue`'''
-        self.redis.lrem(queue, 1, player_id)
-        self.redis.delete(f'{player_id}:queue')
+        await self.redis.lrem(queue, 1, player_id)
+        await self.redis.srem(self.players_key, player_id)
 
     
-    def form_teams(self, players: list, teams: dict) -> list[dict]:
+    def form_teams(self, players: list, teams: dict) -> list[CreatePlayer]:
         '''
         A helper function used to create valid team list which can be passed to
         `GameRoomRepository.create_game` function
@@ -111,24 +120,23 @@ class GameQueueRepository(RedisRepository):
         player_array = np.array_split(players, len(teams))
         for i, p in enumerate(player_array):
             res.extend([
-                {
-                    'id': pl,
-                    'team': teams[i]
-                } for pl in p
+                CreatePlayer(
+                    firebase_uid=str(pl),
+                    team=teams[i],
+                ) for pl in p
             ])
         return res
 
     
-    def create_room(self, players: list, teams: dict = None) -> str:
+    async def create_room(self, players: list, teams: dict = None) -> str:
         from . import game_room
         '''Creates a GameRoomRepository and returns game key'''
-        if len(players) < 2:
+        if len(set(players)) < 2:
             raise ValueError('At least two players are required to start a game!')
-        if teams and len(teams) < 2:
+        if teams and len(set(teams)) < 2:
             raise ValueError('At least two teams have to be provided!')
         
         TEAMS = teams or settings.game_teams
         players = self.form_teams(players, TEAMS)
-        game_key = game_room.create_game(players)
+        game_key = await game_room.create_game(players)
         return game_key
-

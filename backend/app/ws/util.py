@@ -33,7 +33,7 @@ async def join_game(sid: str, player_id: int, game_key: str, namespace: str):
     if not game_key:
         return
     await sio.enter_room(sid, game_key, namespace=namespace)
-    game_room.join_game(player_id, game_key)
+    await game_room.join_game(player_id, game_key)
     await sio.emit('game_joined', {
         'game_key': game_key
     }, to=game_key, namespace=namespace)
@@ -44,16 +44,16 @@ async def join_game_currently_in(sid: str, namespace: str) -> bool:
     if not current_user:
         return False
 
-    game_key = game_room.get_current_game(current_user.firebase_uid)
+    game_key = await game_room.get_current_game(current_user.firebase_uid)
     if not game_key:
         return False
 
     await join_game(sid, current_user.firebase_uid, game_key, namespace)
-    player = game_room.get_player(game_key, current_user.firebase_uid)
+    player = await game_room.get_player(game_key, current_user.firebase_uid)
     safe_remove_job(f'send_disconnect_event:{current_user.firebase_uid}')
 
     if player:
-        team = player.get('team')
+        team = player.team
         if team:
             record_job_name = f"record_technical_defeat:{game_key}:{team}"
             if scheduler.get_job(record_job_name):
@@ -63,7 +63,7 @@ async def join_game_currently_in(sid: str, namespace: str) -> bool:
                     namespace=namespace
                 )
             safe_remove_job(record_job_name)
-            game_room.set_player_key(game_key, current_user.firebase_uid, 'is_connected', True)
+            await game_room.set_is_connected(game_key, current_user.firebase_uid, True)
 
     return True
 
@@ -76,16 +76,10 @@ async def get_full_player_data(game_key: str, player_id: int) -> dict:
             .where(UserModel.firebase_uid == player_id)
             .options(selectinload(UserModel.stats))
         )
-    player_data = game_room.get_player(game_key, player_id)
+    player = await game_room.get_player(game_key, player_id)
+    player_data = player.model_dump(mode='json')
     player_data.update(UserPublicSchema.model_validate(u).model_dump())
     return FullPlayerDataSchema.model_validate(player_data).model_dump(mode='json')
-
-async def get_full_teams_data(game_key: str) -> list[dict]:
-    teams = game_room.get_teams(game_key)
-    for i, t in enumerate(teams):
-        teams[i]['players'] = [await get_full_player_data(game_key, p['id']) for p in t['players']]
-
-    return teams
 
 def safe_remove_job(job_name: str) -> None:
     if scheduler.get_job(job_name):

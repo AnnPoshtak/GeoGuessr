@@ -6,11 +6,13 @@ from contextlib import asynccontextmanager
 import socketio
 import app.routes.single_player as single_player
 import app.routes.users as users
+from aredis_om import Migrator
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from .core.scheduler import scheduler
     scheduler.start()
+    await Migrator().run()
     yield
     scheduler.shutdown()
 
