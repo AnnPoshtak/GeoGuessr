@@ -22,6 +22,16 @@
     <meta name="twitter:image" content="/preview.png" />
 
     <link rel="preconnect" href="https://maps.googleapis.com" />
+
+    <script>
+      (function() {
+        const theme = localStorage.getItem('theme') || 
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
