@@ -59,7 +59,7 @@ function LocationSelectMap({
     );
 
     return (
-        <div className={`flex flex-col bg-glass-bg backdrop-blur-md border border-glass-border rounded-2xl p-2 shadow-2xl transition-all duration-300 ${className}`}>
+        <div className={`flex flex-col bg-glass-bg backdrop-blur-md border border-glass-border rounded-2xl p-2 shadow-2xl transition-all duration-300 ease-in-out transform origin-bottom-right hover:scale-150 z-10 hover:z-50 ${className}`}>
             <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-black/5 dark:border-white/10">
                 <GoogleMap 
                     onLoad={(m) => setMap(m)} 
