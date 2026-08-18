@@ -1,0 +1,71 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LocationSelectMap - Integration & Re-renders > matches snapshot when error occurs 1`] = `
+<div>
+  <div
+    class="flex items-center justify-center p-4 text-xs font-bold uppercase tracking-wider text-rose-500 bg-glass-bg backdrop-blur-md rounded-2xl border border-glass-border"
+  >
+    Map loading error
+  </div>
+</div>
+`;
+
+exports[`LocationSelectMap - Integration & Re-renders > matches snapshot when fully loaded in default singleplayer mode 1`] = `
+<div>
+  <div
+    class="flex flex-col bg-glass-bg backdrop-blur-md border border-glass-border rounded-2xl p-2 shadow-2xl transition-all duration-300 ease-in-out transform origin-bottom-right hover:scale-150 z-10 hover:z-50 undefined"
+  >
+    <div
+      class="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-black/5 dark:border-white/10"
+    >
+      <div
+        class="w-full h-full border-0 rounded-xl"
+        data-center="{"lat":0,"lng":0}"
+        data-options="{"disableDefaultUI":true,"draggableCursor":"crosshair","draggingCursor":"crosshair"}"
+        data-testid="google-map"
+        data-zoom="1.5"
+      />
+    </div>
+    <div
+      class="mt-2 w-full shrink-0"
+    >
+      <button
+        class="w-full rounded-xl bg-primary hover:bg-primary-hover text-white font-black text-xs uppercase tracking-wider py-3 px-4 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:bg-black/10 dark:disabled:bg-white/5 disabled:text-muted disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+        disabled=""
+      >
+        Submit guess!
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LocationSelectMap - Integration & Re-renders > matches snapshot when in multiplayer mode 1`] = `
+<div>
+  <div
+    class="flex flex-col bg-glass-bg backdrop-blur-md border border-glass-border rounded-2xl p-2 shadow-2xl transition-all duration-300 ease-in-out transform origin-bottom-right hover:scale-150 z-10 hover:z-50 undefined"
+  >
+    <div
+      class="flex-1 w-full h-full relative rounded-xl overflow-hidden border border-black/5 dark:border-white/10"
+    >
+      <div
+        class="w-full h-full border-0 rounded-xl"
+        data-center="{"lat":0,"lng":0}"
+        data-options="{"disableDefaultUI":true,"draggableCursor":"crosshair","draggingCursor":"crosshair"}"
+        data-testid="google-map"
+        data-zoom="1.5"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LocationSelectMap - Integration & Re-renders > matches snapshot when loading 1`] = `
+<div>
+  <div
+    class="flex items-center justify-center p-4 text-xs font-bold uppercase tracking-wider text-muted bg-glass-bg backdrop-blur-md rounded-2xl border border-glass-border animate-pulse"
+  >
+    Loading map...
+  </div>
+</div>
+`;
