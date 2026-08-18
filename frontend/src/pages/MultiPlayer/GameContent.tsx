@@ -9,6 +9,8 @@ import { useGameContext } from '@/context/GameContext';
 import { useGameEvents } from '@/hooks/useGameEvents';
 import config from '@/config';
 import type { GameRoom } from '@/interfaces/GameRoom';
+import type { MapLocation } from '@/interfaces/MapLocation';
+import type { Team } from '@/interfaces/Team';
 import { MultiplayerScorebar } from '@/components/MultiplayerScorebar/MultiplayerScorebar';
 import StreetView from '@/components/StreetView/StreetView';
 import GameEndScreen from '@/pages/MultiPlayer/components/GameEndScreen';
@@ -18,6 +20,34 @@ import Distance from '@/components/Distance/Distance';
 import GuessMarker from '@/components/GuessMarker/GuessMarker';
 import { MultiplayerControls } from '@/components/MultiplayerControls/MultiplayerControls';
 import { Trophy } from 'lucide-react';
+
+interface GameState {
+    isEnded: boolean;
+    winner: string | null;
+    teams: Team[];
+    roundData: RoundData | null;
+    defeatTeamName: string | null;
+    currentCooldown: number;
+    cooldownMessage: string | null;
+    guesses: MapLocation[];
+    scores?: Record<number, number>;
+    autosubmitSeconds?: number;
+}
+
+interface NewRoundData {
+    target: MapLocation;
+    teams: Team[];
+    scores: Record<number, number>;
+}
+
+interface RoundData {
+    target: MapLocation;
+    playerScore: number;
+}
+
+interface EndGameData extends NewRoundData {
+    winner: string | { teamName: string };
+}
 
 const GameContent = () => {
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -32,8 +62,10 @@ const GameContent = () => {
         teams: [],
         roundData: null,
         defeatTeamName: null,
-        autosubmitSeconds: -1,
+        currentCooldown: -1,
+        cooldownMessage: null,
         guesses: [],
+        autosubmitSeconds: -1,
     });
 
     const totalPlayersCount = gameState.teams.reduce((acc, t) => acc + t.players.length, 0);
@@ -76,7 +108,7 @@ const GameContent = () => {
             await queryClient.invalidateQueries({ queryKey: ['game', gameKey] });
             setGuessLocation(null);
             setIsSubmitted(false);
-            setGameState(p => ({ ...p, roundData: null, guesses: [], isSubmitted: false }));
+            setGameState(p => ({ ...p, roundData: null, guesses: [] }));
         }, config.roundAutomoveCooldown);
     };
 
@@ -99,9 +131,9 @@ const GameContent = () => {
 
     // Autosubmit timer effect
     useEffect(() => {
-        if (gameState.autosubmitSeconds <= 0) return;
+        if (!gameState.autosubmitSeconds || gameState.autosubmitSeconds <= 0) return;
         const interval = setInterval(() => {
-            setGameState((p) => ({ ...p, autosubmitSeconds: p.autosubmitSeconds - 1 }));
+            setGameState((p) => ({ ...p, autosubmitSeconds: (p.autosubmitSeconds ?? 0) - 1 }));
         }, 1000);
         return () => clearInterval(interval);
     }, [gameState.autosubmitSeconds]);

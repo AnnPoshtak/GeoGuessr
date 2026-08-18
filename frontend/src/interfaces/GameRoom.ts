@@ -8,6 +8,7 @@ export interface GameRoom {
     multiplier: number;
     target: StreetViewLocationFromApi;
     teams: Team[];
-    autosubmit_seconds: number;
+    current_cooldown: number;
+    cooldown_message: string | null;
     guess: MapLocation | null;
 }

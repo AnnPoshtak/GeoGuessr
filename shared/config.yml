@@ -12,3 +12,5 @@ defeat_team_interval: 5
 disconnect_event_interval: 3
 leave_queue_event_interval: 3
 autosubmit_interval: 5
+inactivity_kick_cooldown: 60 # The gamei initially schedules inactivity kick for this amount of seconds. The timer is reset when the user submits anything
+inactivity_kick_notification_left: 30 # When the user AFKs for inactivity_kick_cooldown - inactivity_kick_notification_left, the counter appears

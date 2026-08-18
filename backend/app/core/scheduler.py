@@ -33,6 +33,9 @@ def send_disconnect_event(game_key: str, user_id: int):
         user = db.session.query(UserModel).filter_by(id=user_id).first()
         if not user:
             return
+        player = game_room.get_player(game_key, user.id)
+        if not player or not player['is_connected']:
+            return
         if game_key:
             game_room.set_player_key(game_key, user.id, 'is_connected', False)
             run_time = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.defeat_team_interval)
@@ -83,7 +86,7 @@ def send_queue_leave_event(user_id: int):
             namespace='/queue'
         )
 
-def send_real_target(sid: str, game_key: str):
+def send_real_target(game_key: str):
     from app import game_room
     with scheduler.app.app_context():
         if game_room.get_temp_target(game_key) and not scheduler.get_job(f'send_real_target:{game_key}'):
@@ -92,7 +95,7 @@ def send_real_target(sid: str, game_key: str):
             scheduler.add_job(
                 f'send_real_target:{game_key}',
                 send_real_target,
-                args=(sid, game_key),
+                args=(game_key),
                 next_run_time=run_time,
                 replace_existing=True,
             )
@@ -104,3 +107,17 @@ def send_real_target(sid: str, game_key: str):
         to=game_key,
         namespace='/game'
         )
+
+def send_inactivity_kick_notification(sid: str, user_id: int):
+    from app.ws.util import get_job_seconds_left
+    from app import game_room
+    with scheduler.app.app_context():
+        game_key = game_room.get_current_game(user_id)
+        if game_key and scheduler.get_job(f'team_submitted:{game_key}'):
+            return
+        job = scheduler.get_job(f'inactivity_kick:{user_id}')
+        seconds = get_job_seconds_left(job) or -1
+        emit('inactivity_kick_notification', {
+            'current_cooldown': seconds,
+            'cooldown_message': "Inactivity kick in:",
+        }, to=sid, namespace='/game')

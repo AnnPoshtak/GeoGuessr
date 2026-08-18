@@ -20,12 +20,7 @@ def load_user(id):
 def create_app(config=DevelopmentConfig) -> Flask:
     app = Flask(__name__)
     configure_settings(config)
-
-    app.config['SECRET_KEY'] = settings.SECRET_KEY
-    app.config['SESSION_TYPE'] = settings.SESSION_TYPE
-    app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
-    app.config['SESSION_COOKIE_SAMESITE'] = settings.SESSION_COOKIE_SAMESITE
-    app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
+    app.config.from_mapping(settings.model_dump())
     app.config.update({
         'SESSION_REDIS': session_redis
     })

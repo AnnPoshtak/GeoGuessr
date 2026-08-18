@@ -5,7 +5,8 @@ from app import game_room
 from app.schemas import user_public_schema, full_player_data_schema
 from app.models import UserModel
 from app.core.scheduler import scheduler
-import json
+import datetime
+from apscheduler.job import Job
 from apscheduler.jobstores.base import JobLookupError
 from flask import current_app
 
@@ -33,18 +34,13 @@ def join_game_currently_in() -> bool:
     if game_key:
         join_game(current_user.id, game_key)
         player = game_room.get_player(game_key, current_user.id)
-        try:
-            scheduler.remove_job(f"record_technical_defeat:{game_key}:{player['team']}")
+        if scheduler.get_job(f"record_technical_defeat:{game_key}:{player['team']}"):
             emit(
                 'record_defeat_cancelled',
                 to=game_key
             )
-        except JobLookupError:
-            pass
-        try:
-            scheduler.remove_job(f'send_disconnect_event:{current_user.id}')
-        except JobLookupError:
-            pass
+        safe_remove_job(f"record_technical_defeat:{game_key}:{player['team']}")
+        safe_remove_job(f'send_disconnect_event:{current_user.id}')
         game_room.set_player_key(game_key, current_user.id, 'is_connected', True)
         return True
     return False
@@ -61,3 +57,17 @@ def get_full_teams_data(game_key: str) -> list[dict]:
         teams[i]['players'] = [get_full_player_data(game_key, p['id']) for p in t['players']]
 
     return teams
+
+def safe_remove_job(job_name: str) -> None:
+    if scheduler.get_job(job_name):
+        try:
+            scheduler.remove_job(job_name)
+        except JobLookupError as e:
+            current_app.logger.info(f'An error occured when trying to remove job {job_name}: {e}', exc_info=False)
+
+def get_job_seconds_left(job: Job) -> int | None:
+    if not job:
+        return
+    run_time = job.next_run_time.replace(tzinfo=datetime.timezone.utc)
+    seconds = round((run_time - datetime.datetime.now(tz=datetime.timezone.utc)).total_seconds())
+    return seconds
