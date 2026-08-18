@@ -1,0 +1,109 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Home Component - Layout, CSS & Integration > matches DOM snapshot 1`] = `
+<div>
+  <div
+    class="relative w-screen h-screen overflow-hidden flex flex-col items-center font-sans selection:bg-primary/30 bg-cover bg-center bg-no-repeat transition-all duration-700 bg-game-bg"
+  >
+    <div
+      class="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/5 dark:from-black/20 dark:to-black/40 pointer-events-none z-0"
+    />
+    <div
+      class="relative z-30 w-full"
+    >
+      <header
+        data-testid="mock-header"
+      >
+        Header Component
+      </header>
+    </div>
+    <div
+      class="relative z-10 flex-1 w-full max-w-7xl px-6 flex flex-col justify-center gap-12 md:flex-row md:items-center md:justify-between text-center md:text-left"
+    >
+      <div
+        class="flex-1 max-w-xl p-8 rounded-3xl bg-glass-bg backdrop-blur-md border border-glass-border shadow-[0_8px_32px_rgba(45,42,107,0.04)] select-none transition-all duration-300"
+      >
+        <h2
+          class="text-4xl sm:text-5xl md:text-6xl font-black text-dark leading-tight uppercase tracking-tight transition-colors"
+        >
+          Discover the 
+          <span
+            class="text-accent transition-colors"
+          >
+            unknown
+          </span>
+           world
+        </h2>
+        <p
+          class="mt-4 text-muted text-sm md:text-base font-bold tracking-wide leading-relaxed transition-colors"
+        >
+          Test your intuition, guess the locations, and embark on an exciting journey across continents.
+        </p>
+      </div>
+      <div
+        class="flex-1 flex justify-center items-center w-full"
+      >
+        <div
+          class="w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] md:w-[480px] md:h-[480px]"
+        >
+          <div
+            data-testid="mock-earth-globe"
+          >
+            Earth Globe Component
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="relative z-30 pb-16 w-full max-w-4xl px-4 flex flex-col sm:flex-row gap-4 justify-center items-center"
+    >
+      <button
+        class="w-full sm:w-80 p-5 rounded-2xl bg-primary text-white flex items-center justify-between shadow-lg hover:bg-primary-hover transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+      >
+        <div
+          class="text-left"
+        >
+          <h3
+            class="font-bold text-lg"
+          >
+            Singleplayer
+          </h3>
+          <p
+            class="text-xs text-white/70 mt-0.5"
+          >
+            Explore the world on your own
+          </p>
+        </div>
+        <span
+          class="bg-white/20 p-2 rounded-full"
+        >
+          ➔
+        </span>
+      </button>
+      <button
+        class="w-full sm:w-80 p-5 rounded-2xl bg-brand-bg text-dark border border-neutral-100/10 dark:border-white/5 flex items-center justify-between shadow-md hover:opacity-90 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+      >
+        <div
+          class="text-left"
+        >
+          <h3
+            class="font-bold text-lg"
+          >
+            Multiplayer
+          </h3>
+          <p
+            class="text-xs text-muted/70 mt-0.5"
+          >
+            Compete with other players
+          </p>
+        </div>
+        <span
+          class="bg-primary text-white p-2 rounded-full"
+        >
+          ➔
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+`;

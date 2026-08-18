@@ -108,3 +108,42 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.2);
 }
+
+@theme {
+  --color-primary: #5c4ec3;
+  --color-primary-hover: #4a3cb0;
+  --color-accent: #5c4ec3; 
+
+  --color-dark: #2d2a6b;
+  --color-muted: #555290;
+  --color-brand-bg: #fcfbfa;
+  --color-globe-ocean: #eaf2f8;
+  --color-globe-land: #cdcaed;
+  --color-glass-bg: rgba(255, 255, 255, 0.4);
+  --color-glass-border: rgba(255, 255, 255, 0.2);
+
+  --background-image-game-bg: url('/background/background-day.webp');
+
+  --color-stat-score: #4338ca;   
+  --color-stat-correct: #047857; 
+  --color-stat-close: #b45309;
+  --color-stat-missed: #be123c;
+}
+
+.dark {
+  --color-dark: #ffffff;
+  --color-muted: #a3a1cc;
+  --color-brand-bg: #1e1b4b;
+  --color-glass-bg: rgba(23, 20, 51, 0.6);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-globe-ocean: #131131;
+  --color-globe-land: #8179d6;
+
+  --color-accent: #a594ff; 
+  --background-image-game-bg: url('/background/background-night.webp');
+
+  --color-stat-score: #818cf8;
+  --color-stat-correct: #34d399;
+  --color-stat-close: #fbbf24;
+  --color-stat-missed: #f87171;
+}

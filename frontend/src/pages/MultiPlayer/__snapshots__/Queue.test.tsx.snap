@@ -1,0 +1,191 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Queue Component - DOM & Styling Edge Cases > matches DOM snapshot for active searching queue 1`] = `
+<div>
+  <div
+    class="flex flex-col items-center justify-center min-h-[260px] w-full text-center selection:bg-primary/30 font-sans"
+  >
+    <div
+      class="flex flex-col items-center gap-6 w-full max-w-sm animate-fade-in"
+    >
+      <div
+        class="relative flex items-center justify-center w-20 h-20"
+      >
+        <div
+          class="absolute inset-0 rounded-full border-4 border-primary/10"
+        />
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-loader-circle w-20 h-20 text-accent animate-spin stroke-[2.5]"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M21 12a9 9 0 1 1-6.219-8.56"
+          />
+        </svg>
+        <div
+          class="absolute flex flex-col items-center justify-center"
+        >
+          <span
+            class="text-xs font-black text-dark tracking-tighter"
+          >
+            1
+            /
+            4
+          </span>
+        </div>
+      </div>
+      <div
+        class="space-y-1"
+      >
+        <h2
+          class="text-sm font-black tracking-widest text-dark uppercase animate-pulse"
+        >
+          Searching for opponents...
+        </h2>
+        <p
+          class="text-xs text-muted font-bold tracking-wide"
+        >
+          Waiting for 
+          <span
+            class="text-accent"
+          >
+            3
+          </span>
+           more player(s)
+        </p>
+      </div>
+      <button
+        class="group w-full py-3.5 px-6 rounded-2xl bg-stat-missed/10 border border-stat-missed/20 text-stat-missed font-black text-xs uppercase tracking-widest transition-all duration-300 hover:bg-stat-missed hover:text-white hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-log-out w-4 h-4 transition-transform group-hover:-translate-x-0.5"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m16 17 5-5-5-5"
+          />
+          <path
+            d="M21 12H9"
+          />
+          <path
+            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+          />
+        </svg>
+        <span>
+          Leave Queue
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Queue Component - DOM & Styling Edge Cases > matches DOM snapshot for null queue 1`] = `
+<div>
+  <div
+    class="flex flex-col items-center justify-center min-h-[260px] w-full text-center selection:bg-primary/30 font-sans"
+  >
+    <div
+      class="flex flex-col items-center gap-6 w-full max-w-sm animate-fade-in"
+    >
+      <div
+        class="space-y-2"
+      >
+        <div
+          class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 text-accent flex items-center justify-center mx-auto mb-2"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-swords w-6 h-6"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <polyline
+              points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"
+            />
+            <line
+              x1="13"
+              x2="19"
+              y1="19"
+              y2="13"
+            />
+            <line
+              x1="16"
+              x2="20"
+              y1="16"
+              y2="20"
+            />
+            <line
+              x1="19"
+              x2="21"
+              y1="21"
+              y2="19"
+            />
+            <polyline
+              points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"
+            />
+            <line
+              x1="5"
+              x2="9"
+              y1="14"
+              y2="18"
+            />
+            <line
+              x1="7"
+              x2="4"
+              y1="17"
+              y2="20"
+            />
+            <line
+              x1="3"
+              x2="5"
+              y1="19"
+              y2="21"
+            />
+          </svg>
+        </div>
+        <h2
+          class="text-2xl font-black tracking-tight text-dark uppercase"
+        >
+          Ready to battle?
+        </h2>
+        <p
+          class="text-xs text-muted font-bold max-w-xs px-2 leading-relaxed"
+        >
+          Join matchmaking to find opponents and prove your geography knowledge.
+        </p>
+      </div>
+      <button
+        class="w-full py-4 px-6 rounded-2xl bg-primary text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover:bg-primary-hover hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
+      >
+        Find Match
+      </button>
+    </div>
+  </div>
+</div>
+`;
