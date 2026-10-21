@@ -2,10 +2,6 @@ import os
 os.environ['SECRET_KEY'] = 'test-secret-key'
 os.environ['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
 os.environ['CORS_ORIGINS'] = 'http://localhost:3000'
-os.environ['FRONTEND_URL'] = 'http://localhost:3000'
-os.environ['GOOGLE_CLIENT_ID'] = 'test-google-client-id'
-os.environ['GOOGLE_CLIENT_SECRET'] = 'test-google-client-secret'
-os.environ['REDIS_URL'] = 'redis://localhost:6379/3'
 import pytest
 from unittest.mock import patch
 from app import create_app

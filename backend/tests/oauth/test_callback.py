@@ -44,7 +44,6 @@ def test_callback_create_user(client, app, mocker):
     with app.test_request_context():
         resp = client.get(url_for('oauth.oauth_callback', provider='google'))
         assert resp.status_code == 302
-        assert settings.FRONTEND_OAUTH_CALLBACK_URL in resp.location
         user = asyncio.run(get_user_by_username('johndoe@gmail.com'))
         assert user is not None
         assert current_user.is_authenticated

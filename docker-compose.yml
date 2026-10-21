@@ -35,9 +35,7 @@ services:
       - ./backend/.env
     environment:
       SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://geoguessr:geoguessr@db:5432/geoguessr
-      DATABASE_URL: postgresql+psycopg2://geoguessr:geoguessr@db:5432/geoguessr
       REDIS_OM_URL: redis://redis:6379/0
-      FLASK_DEBUG: 'True'
     ports:
       - '8000:8000'
     networks:

@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     # .env
     SECRET_KEY: str
     SQLALCHEMY_DATABASE_URI: str
-    FRONTEND_URL: str
     REDIS_OM_URL: str
     REDIS_CACHE_URL: str
     HOST: str
@@ -26,26 +25,8 @@ class Settings(BaseSettings):
     DEBUG: bool
 
     # python-defined settings
-    SESSION_COOKIE_HTTPONLY: bool = True
-    SESSION_COOKIE_SAMESITE: str = 'Lax'
     CORS_ORIGINS: list[str] = Field(default=[], validation_alias='CORS_ORIGINS_CONFIG')
-    OAUTH_PROVIDERS: dict = {
-        'google': {
-            'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
-            'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
-            'authorize_url': 'https://accounts.google.com/o/oauth2/v2/auth',
-            'access_token_url': 'https://oauth2.googleapis.com/token',
-            'api_base_url': 'https:/googleapis.com/',
-            'userinfo': {
-                'url': 'https://www.googleapis.com/oauth2/v3/userinfo',
-                'email': lambda json: json['email'],
-            },
-            'scopes': ['email']
-        },
-    }
-    FRONTEND_OAUTH_CALLBACK_URL: str = ""
-    SESSION_TYPE: str = 'redis'
-    SCHEDULER_TIMEZONE: str = 'UTC'
+
     SCHEDULER_JOB_DEFAULTS: dict = {
         'misfire_grace_time': 5,
         'coalesce': True,
@@ -62,7 +43,6 @@ class Settings(BaseSettings):
     game_playercount: list
     game_teams: dict
     defeat_team_interval: int
-    disconnect_event_interval: int
     leave_queue_event_interval: int 
     autosubmit_interval: int
     round_automove_cooldown: int
@@ -71,7 +51,6 @@ class Settings(BaseSettings):
 
     @model_validator(mode='after')
     def _set_computed_fields(self):
-        self.FRONTEND_OAUTH_CALLBACK_URL = f"{self.FRONTEND_URL}/oauth/callback/"
         if not self.CORS_ORIGINS:
             self.CORS_ORIGINS = [os.environ.get('CORS_ORIGINS', 'http://localhost:5173').strip("'\"")]
         self.round_automove_cooldown = int(self.round_automove_cooldown / 1000)
