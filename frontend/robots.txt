@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /single-game
+Allow: /multiplayer
+
+Disallow: /multiplayer-game
+Disallow: /oauth/
+
+Sitemap: http://localhost:5173/sitemap.xml

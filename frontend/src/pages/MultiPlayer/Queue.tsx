@@ -4,6 +4,7 @@ import type { GameQueue } from "@/interfaces/GameQueue";
 import { gameQueue, gameRoom } from "@/ws/wsClient";
 import { useEffect, type MouseEventHandler } from "react";
 import { toast } from "sonner";
+import { Loader2, Swords, LogOut } from "lucide-react";
 
 interface QueueProps {
     queue: GameQueue | null | undefined;
@@ -48,68 +49,60 @@ const Queue = ({ queue, join, leave }: QueueProps) => {
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[250px] w-full text-center">
+        <div className="flex flex-col items-center justify-center min-h-[260px] w-full text-center selection:bg-primary/30 font-sans">
             {!queue ? (
                 <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-fade-in">
                     <div className="space-y-2">
-                        <h2 className="text-xl font-bold tracking-wider text-white uppercase">
-                            Ready to explore?
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 text-accent flex items-center justify-center mx-auto mb-2">
+                            <Swords className="w-6 h-6" />
+                        </div>
+                        <h2 className="text-2xl font-black tracking-tight text-dark uppercase">
+                            Ready to battle?
                         </h2>
-                        <p className="text-xs text-gray-400 max-w-xs px-4">
-                            Join the matchmaking system to test your geographical skills against other players worldwide.
+                        <p className="text-xs text-muted font-bold max-w-xs px-2 leading-relaxed">
+                            Join matchmaking to find opponents and prove your geography knowledge.
                         </p>
                     </div>
 
                     <button 
                         onClick={join}
-                        className="w-full py-4 px-6 rounded-xl font-black text-sm uppercase tracking-[0.15em] transition-all duration-150 hover:scale-[1.03] active:scale-[0.97]"
-                        style={{
-                            background: '#eef2f8',
-                            color: '#0d47a1',
-                            boxShadow: '0 8px 24px rgba(79,195,247,0.25), 0 4px 10px rgba(0,0,0,0.3)',
-                        }}
+                        className="w-full py-4 px-6 rounded-2xl bg-primary text-white font-black text-sm uppercase tracking-widest transition-all duration-300 hover:bg-primary-hover hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
                     >
                         Find Match
                     </button>
                 </div>
             ) : (
                 <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-fade-in">
-                    <div className="relative flex items-center justify-center w-16 h-16">
-                        <div className="absolute inset-0 border-4 border-cyan-500/20 rounded-full" />
-                        <div 
-                            className="absolute inset-0 border-4 border-transparent border-t-cyan-400 rounded-full animate-spin"
-                            style={{ filter: 'drop-shadow(0 0 6px #00e5ff)' }}
-                        />
-                        <span className="text-xs font-black text-cyan-400 tracking-tighter">
-                            {queue.players.length}/{queue.player_count}
-                        </span>
+                    <div className="relative flex items-center justify-center w-20 h-20">
+                        <div className="absolute inset-0 rounded-full border-4 border-primary/10" />
+                        <Loader2 className="w-20 h-20 text-accent animate-spin stroke-[2.5]" />
+                        <div className="absolute flex flex-col items-center justify-center">
+                            <span className="text-xs font-black text-dark tracking-tighter">
+                                {queue.players.length}/{queue.player_count}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="space-y-1">
-                        <h2 className="text-sm font-bold tracking-[0.15em] text-white uppercase animate-pulse">
-                            Searching for players
+                        <h2 className="text-sm font-black tracking-widest text-dark uppercase animate-pulse">
+                            Searching for opponents...
                         </h2>
-                        <p className="text-[11px] text-gray-400 tracking-wider">
-                            Waiting for {queue.player_count - queue.players.length} more players to join...
+                        <p className="text-xs text-muted font-bold tracking-wide">
+                            Waiting for <span className="text-accent">{queue.player_count - queue.players.length}</span> more player(s)
                         </p>
                     </div>
 
                     <button 
                         onClick={leave}
-                        className="w-full py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-[0.12em] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]"
-                        style={{
-                            background: 'rgba(239,68,68,0.08)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239,68,68,0.25)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                        }}
+                        className="group w-full py-3.5 px-6 rounded-2xl bg-stat-missed/10 border border-stat-missed/20 text-stat-missed font-black text-xs uppercase tracking-widest transition-all duration-300 hover:bg-stat-missed hover:text-white hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
                     >
-                        Leave Queue
+                        <LogOut className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+                        <span>Leave Queue</span>
                     </button>
                 </div>
             )}
         </div>
     );
 };
- 
+
 export default Queue;

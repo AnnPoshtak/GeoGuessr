@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GameContent - Styling & DOM Snapshots > matches DOM snapshot for joined active game 1`] = `
+<div>
+  <div
+    class="w-full h-full absolute inset-0 bg-game-bg overflow-hidden select-none font-sans"
+  >
+    <div
+      data-testid="mock-scorebar"
+    >
+      Scorebar - User: 
+      1
+       - Seconds: 
+      -1
+    </div>
+    <div
+      data-testid="mock-street-view"
+    >
+      Street View Component
+    </div>
+    <div
+      class="absolute z-30 left-3 right-3 bottom-3 sm:left-auto sm:right-6 sm:bottom-6 p-2 rounded-3xl border border-glass-border bg-glass-bg backdrop-blur-md shadow-2xl transition-all duration-300 ease-out 
+                    w-auto h-[34vh] min-h-[240px] sm:w-80 sm:h-64 md:w-96 md:h-72 sm:hover:w-[450px] sm:hover:h-[360px] flex flex-col justify-between"
+    >
+      <div
+        data-testid="mock-location-select-map"
+      >
+        <button
+          data-testid="mock-inner-submit-btn"
+        >
+          Submit Location
+        </button>
+      </div>
+      <div
+        data-testid="mock-multiplayer-controls"
+      >
+        <button
+          data-testid="mock-controls-submit-btn"
+        >
+          Submit Control
+        </button>
+        <span
+          data-testid="mock-submitted-status"
+        >
+          Not Submitted
+        </span>
+        <span
+          data-testid="mock-ready-status"
+        >
+          Not Ready
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;

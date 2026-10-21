@@ -19,7 +19,7 @@ interface GameContextProps {
     setIsSoundOn: Dispatch<SetStateAction<boolean>>;
     score: number;
     setScore: Dispatch<SetStateAction<number>>;
-    
+
     totalGuesses: number;
     correctGuesses: number;
     closeGuesses: number;
@@ -39,7 +39,7 @@ export const GameContext = createContext<GameContextProps>({
     setIsSoundOn: () => { },
     score: 0,
     setScore: () => { },
-    
+
     totalGuesses: 0,
     correctGuesses: 0,
     closeGuesses: 0,
@@ -90,6 +90,10 @@ export const GameContextProvider = ({ children }: { children: ReactNode }) => {
 
             setTotalGuesses(prev => prev + 1);
 
+            if (typeof guessSubmitResponse.score === "number") {
+                setScore(prev => prev + guessSubmitResponse.score);
+            }
+            
             if (result === "correct") setCorrectGuesses(prev => prev + 1);
             if (result === "ok") setCloseGuesses(prev => prev + 1);
             if (result === "wrong") setNotGuesses(prev => prev + 1);
